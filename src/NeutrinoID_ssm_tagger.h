@@ -417,7 +417,9 @@ bool WCPPID::NeutrinoID::ssm_tagger(){
     double sg_direct_length = sg->get_direct_length()/units::cm;
     bool sg_flag_backwards_muon = false;
     bool sg_flag_vtx_activity = false;
-    if( (sg_length <= 34 && sg_length >= 1 && abs(sg->get_particle_type())==13) || (sg_direct_length > 0.9 * sg_length && sg_length <= 32 && sg_length >= 1 && abs(sg->get_particle_type())==11)){
+    // Aren't you a little short for a stormtrooper?
+    //if( (sg_length <= 34 && sg_length >= 1 && abs(sg->get_particle_type())==13) || (sg_direct_length > 0.9 * sg_length && sg_length <= 32 && sg_length >= 1 && abs(sg->get_particle_type())==11)){
+    if( (sg_length <= 46 && sg_length >= 1 && abs(sg->get_particle_type())==13) || (sg_direct_length > 0.9 * sg_length && sg_length <= 44 && sg_length >= 1 && abs(sg->get_particle_type())==11)){
     //veto stuff we still dont want
       if(sg_length<1) {std::cout<<"\n too short"<<std::endl; continue;}//previously was 5
       if(sg->get_medium_dQ_dx()/(43e3/units::cm)<0.95){ std::cout<<"\n bad dq/dx"<<std::endl; continue;}//previously was 1
