@@ -519,11 +519,11 @@ int main(int argc, char* argv[])
       map_cluster_parent_id[cluster] = parent_cluster_id->at(i);
       live_clusters.push_back(cluster);
       if (map_parentid_clusters.find(parent_cluster_id->at(i)) == map_parentid_clusters.end()){
-	std::vector<WCPPID::PR3DCluster*> temp_clusters;
-	temp_clusters.push_back(cluster);
-	map_parentid_clusters[parent_cluster_id->at(i)] = temp_clusters;
+        std::vector<WCPPID::PR3DCluster*> temp_clusters;
+        temp_clusters.push_back(cluster);
+        map_parentid_clusters[parent_cluster_id->at(i)] = temp_clusters;
       }else{
-	map_parentid_clusters[parent_cluster_id->at(i)].push_back(cluster);
+        map_parentid_clusters[parent_cluster_id->at(i)].push_back(cluster);
       }
     }
     cluster->AddCell(mcell,time_slice);
@@ -830,6 +830,19 @@ int main(int argc, char* argv[])
     // if (flag_tgm == 0 && flag_low_energy == 0 && flag_lm ==0 ){
     if (1){ // hack for now ...
       if (flag_main_cluster_only){
+        main_cluster->form_cell_points_map();
+
+        auto temp_map = main_cluster->temp_cell_point_indices_map();
+        std::cout << "Xin: " << flash_time << " " << main_cluster->get_num_mcells() << " " << main_cluster->get_num_points()  << " " << temp_map.size() << std::endl;
+        for( auto it2 = additional_clusters.begin(); it2!=additional_clusters.end(); it2++){
+           std::cout << "Xin " << (*it2)->get_num_mcells() << " " << (*it2)->get_num_points() << std::endl;
+        }
+        
+        // for (auto it1 = temp_map.begin(); it1!=temp_map.end();it1++){
+        //   std::cout << "Xin1: " << it1->first->get_uwires().size() << " " << it1->first->get_vwires().size() << " " << it1->first->get_wwires().size() << " " << it1->second.size() << std::endl;
+        // }
+        
+
     	main_cluster->create_steiner_graph(ct_point_cloud, gds, nrebin, frame_length, unit_dis);
 	//	main_cluster->recover_steiner_graph();
       }else{

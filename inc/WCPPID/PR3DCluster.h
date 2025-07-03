@@ -275,6 +275,9 @@ namespace WCPPID{
     std::vector<float> get_time_ch_range(); 
     void fill_2d_charge_dead_chs(std::map<std::pair<int,int>, std::pair<double,double> >& charge_2d_u, std::map<std::pair<int,int>, std::pair<double,double> >& charge_2d_v, std::map<std::pair<int,int>, std::pair<double,double> >& charge_2d_w);
     
+    // hack for debug purpose ...
+    std::map<WCP::SlimMergeGeomCell*, std::set<int>> temp_cell_point_indices_map(){return cell_point_indices_map;};
+
   protected:
     
     int cluster_id;
