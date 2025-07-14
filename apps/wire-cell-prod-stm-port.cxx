@@ -830,18 +830,122 @@ int main(int argc, char* argv[])
     // if (flag_tgm == 0 && flag_low_energy == 0 && flag_lm ==0 ){
     if (1){ // hack for now ...
       if (flag_main_cluster_only){
-        main_cluster->form_cell_points_map();
+        // main_cluster->form_cell_points_map();
+        // auto temp_map = main_cluster->temp_cell_point_indices_map();
+        // std::cout << "Xin: " << flash_time << " " << main_cluster->get_num_mcells() << " " << main_cluster->get_num_points()  << " " << temp_map.size() << std::endl;
+        // for( auto it2 = additional_clusters.begin(); it2!=additional_clusters.end(); it2++){
+        //    std::cout << "Xin " << (*it2)->get_num_mcells() << " " << (*it2)->get_num_points() << std::endl;
+        // }
 
-        auto temp_map = main_cluster->temp_cell_point_indices_map();
-        std::cout << "Xin: " << flash_time << " " << main_cluster->get_num_mcells() << " " << main_cluster->get_num_points()  << " " << temp_map.size() << std::endl;
-        for( auto it2 = additional_clusters.begin(); it2!=additional_clusters.end(); it2++){
-           std::cout << "Xin " << (*it2)->get_num_mcells() << " " << (*it2)->get_num_points() << std::endl;
+        {
+          main_cluster->Create_graph();
+          auto graph = main_cluster->get_graph();
+          std::cout << "CreateSteinerGraph " << boost::num_vertices(*graph) << " vertices " << boost::num_edges(*graph) << " edges" << std::endl;
+          ToyPointCloud *steiner_pc = new ToyPointCloud();
+          std::vector<bool> flag_steiner_terminal;
+          WCP::SMGCSelection old_mcells = main_cluster->get_mcells();
+          auto temp_steiner_graph = main_cluster->Create_steiner_tree(steiner_pc,flag_steiner_terminal, gds, old_mcells, false, false); // no path, no dead mix
+          size_t num_true_terminals = std::count(flag_steiner_terminal.begin(), flag_steiner_terminal.end(), true);
+          std::cout << "CreateSteinerGraph: " << "steiner_graph with " 
+                      << boost::num_vertices(*temp_steiner_graph) << " vertices and "
+                      << boost::num_edges(*temp_steiner_graph) << " edges." << " " << flag_steiner_terminal.size() << " " << num_true_terminals << std::endl;
         }
+
+
+
         
+        
+
+
+        // // std::cout << "Xin2: " << temp_map.size() <<  " Graph vertices: " << boost::num_vertices(*graph) << ", edges: " << boost::num_edges(*graph) << std::endl;
+        // // main_cluster->establish_same_mcell_steiner_edges(gds, true, 1);
+        // // std::cout << "Xin2: " << temp_map.size() <<  " Graph vertices: " << boost::num_vertices(*graph) << ", edges: " << boost::num_edges(*graph) << std::endl;
+        // // main_cluster->remove_same_mcell_steiner_edges(1);
+        // // std::cout << "Xin2: " << temp_map.size() <<  " Graph vertices: " << boost::num_vertices(*graph) << ", edges: " << boost::num_edges(*graph) << std::endl;
+
+    
+        // 
+        // auto extreme_boundary_points = main_cluster->get_two_boundary_wcps(0);
+        // std::cout << "Xin3 " << extreme_boundary_points.first.x << " " << extreme_boundary_points.first.y << " " << extreme_boundary_points.first.z 
+        //           << " | " << extreme_boundary_points.second.x << " " << extreme_boundary_points.second.y << " " << extreme_boundary_points.second.z << std::endl;
+        // main_cluster->dijkstra_shortest_paths(extreme_boundary_points.first);
+        // main_cluster->cal_shortest_path(extreme_boundary_points.second);
+        // std::cout << "Xin3 " << main_cluster->get_path_wcps().size() << std::endl;
+        // // for (auto it2 = main_cluster->get_path_wcps().begin(); it2!=main_cluster->get_path_wcps().end(); it2++){
+        // //   std::cout << "Xin4: " << (*it2).x << " " << (*it2).y << " " << (*it2).z << std::endl;
+        // // }
+
+        // WCP2dToy::WCPHolder *temp_holder = new WCP2dToy::WCPHolder();
+        // WCPPID::PR3DCluster *new_cluster = WCPPID::Improve_PR3DCluster(main_cluster, ct_point_cloud, gds, temp_holder);
+
+
+        // auto temp_steiner_graph = main_cluster->Create_steiner_tree(steiner_pc,flag_steiner_terminal, gds, old_mcells, false, true);
+        // // Count the number of true values in flag_steiner_terminal
+        // int num_true_steiner_terminals = std::count(flag_steiner_terminal.begin(), flag_steiner_terminal.end(), true);
+        // std::cout << "Xin2: " << temp_map.size() <<  " Steiner Graph vertices: " << boost::num_vertices(*temp_steiner_graph)
+        //       << ", edges: " << boost::num_edges(*temp_steiner_graph) << " " << steiner_pc->get_num_points()
+        //       << " " << flag_steiner_terminal.size() << " num_true_steiner_terminals: " << num_true_steiner_terminals << std::endl;
+
+        // auto edge_weight_map = get(boost::edge_weight, *temp_steiner_graph);
+        // auto& map_new_old_indices = main_cluster->temp_map_new_old_indices;
+
+        // WCP::WCPointCloud<double>& cloud = main_cluster->get_point_cloud()->get_cloud();
+
+        // for (auto edge_it = boost::edges(*temp_steiner_graph); edge_it.first != edge_it.second; ++edge_it.first) {
+        //     auto edge = *edge_it.first;
+        //     auto src = boost::source(edge, *temp_steiner_graph);
+        //     auto tgt = boost::target(edge, *temp_steiner_graph);
+
+        //     // Get the edge weight using the proper accessor
+        //     auto weight = edge_weight_map[edge];
+
+        //     Point test_p, test_q;
+        //     test_p.x = cloud.pts[map_new_old_indices[src]].x;
+        //     test_p.y = cloud.pts[map_new_old_indices[src]].y;
+        //     test_p.z = cloud.pts[map_new_old_indices[src]].z;
+
+        //     test_q.x = cloud.pts[map_new_old_indices[tgt]].x;
+        //     test_q.y = cloud.pts[map_new_old_indices[tgt]].y;
+        //     test_q.z = cloud.pts[map_new_old_indices[tgt]].z;
+
+        //     std::cout << "Edge from vertex " << test_p << " to " << test_q << " with weight " << weight << " " << flag_steiner_terminal[src] << " " << flag_steiner_terminal[tgt] << std::endl;
+        // }
+
         // for (auto it1 = temp_map.begin(); it1!=temp_map.end();it1++){
-        //   std::cout << "Xin1: " << it1->first->get_uwires().size() << " " << it1->first->get_vwires().size() << " " << it1->first->get_wwires().size() << " " << it1->second.size() << std::endl;
+        //   // for (auto it2 = it1->second.begin(); it2!=it1->second.end();it2++){
+        //   //   WCP::WCPointCloud<double>& cloud = main_cluster->get_point_cloud()->get_cloud();
+        //   //   WCPointCloud<double>::WCPoint& wcp = cloud.pts[(*it2)];
+        //   //   auto info = main_cluster->calc_charge_wcp(wcp, gds);
+        //   //   std::cout << "Xin3: " << (*it2) << " " << info.first << " " <<  info.second << std::endl;
+        //   // }
+        //   SMGCSelection temp_mcells;
+        //   temp_mcells.push_back(it1->first);
+        //   std::set<int> indices = main_cluster->find_peak_point_indices(temp_mcells, gds, true);
+
+        //   std::cout << "Xin2: " << it1->first->GetTimeSlice()*4 << " " << (*it1->first->get_uwires().begin())->index() << " " << (*it1->first->get_vwires().begin())->index() << " " << (*it1->first->get_wwires().begin())->index() << " " << it1->second.size() << " " << indices.size() << std::endl;
+
+        // }
+        // main_cluster->find_steiner_terminals(gds);
+        // std::cout << "Xin3:  " << main_cluster->get_steiner_terminals().size() << std::endl;
+        
+        // auto extrem_epoints = main_cluster->get_extreme_wcps();
+        // std::cout <<"Xin4: " << extrem_epoints.size() << std::endl;
+        // for (auto it2 = extrem_epoints.begin(); it2!=extrem_epoints.end();it2++){
+        //   for (auto it3 = (*it2).begin(); it3!=(*it2).end(); it3++){
+        //     std::cout << "Extreme point: " << (*it3).x << " " << (*it3).y << " " << (*it3).z << std::endl;
+        //   }
         // }
         
+
+        // for (auto it1 = temp_map.begin(); it1!=temp_map.end();it1++){
+        //   auto total_charge = it1->first->Estimate_total_charge();
+        //   auto min_charge = it1->first->Estimate_minimum_charge();
+
+        //   std::cout << "Xin2 Cell: " << it1->first->GetTimeSlice()*4 << " " << (*(it1->first->get_uwires().begin()))->index() << " " << (*(it1->first->get_vwires().begin()))->index()  << " " << (*(it1->first->get_wwires().begin()))->index() 
+        //  << " has " << it1->first->get_sampling_points().size() << " points, total charge: " << total_charge 
+        //   << ", min charge: " << min_charge << " " << it1->first->Get_Wire_Charge(*(it1->first->get_uwires().begin())) << " " << it1->first->Get_Wire_Charge_Err(*(it1->first->get_uwires().begin())) 
+        //              << std::endl;
+        // }
 
     	main_cluster->create_steiner_graph(ct_point_cloud, gds, nrebin, frame_length, unit_dis);
 	//	main_cluster->recover_steiner_graph();

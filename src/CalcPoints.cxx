@@ -95,6 +95,7 @@ void WCPPID::calc_sampling_points(WCP::GeomDataSource& gds, WCP::SlimMergeGeomCe
   double charge_threshold_min = 4000; // hard coded number
   double charge_threshold_other = 4000; // hard coded number
   std::vector<WirePlaneType_t> bad_planes = mcell->get_bad_planes();
+
   if (bad_planes.size()>0)
     if (max_wire_plane_type==bad_planes.at(0)){
       charge_threshold_max = 0;
@@ -104,7 +105,9 @@ void WCPPID::calc_sampling_points(WCP::GeomDataSource& gds, WCP::SlimMergeGeomCe
       charge_threshold_other = 0;
     }
 
-    // // debug 
+    // if (!disable_mix_dead_cell)
+    //   std::cout << mcell->GetTimeSlice()*4 << " " << (mcell->GetTimeSlice()+1)*4 << " " << wires_u.front()->index() << " " << wires_u.back()->index()+1 << " " << wires_v.front()->index() << " " << wires_v.back()->index()+1 << " " << wires_w.front()->index() << " " << wires_w.back()->index()+1 << " " << charge_threshold_max << " " << charge_threshold_min << " " << charge_threshold_other << " ";// << std::endl;
+    // // debug
     // bool flag_print = false;
     //  if (wires_u.size() == 10 && wires_v.size() == 10 && wires_w.size() == 3){
     // //std::cout << "A: " << wires_u.size() << " " << wires_v.size() << " " << wires_w.size() << std::endl;
@@ -133,6 +136,7 @@ void WCPPID::calc_sampling_points(WCP::GeomDataSource& gds, WCP::SlimMergeGeomCe
     if (max_wires_set.find(*it)!=max_wires_set.end()) flag_must1 = true;
 
     double charge1 = mcell->Get_Wire_Charge(*it);
+    // if (!disable_mix_dead_cell) std::cout << "max: " << charge1 << " " << (*it)->index() << std::endl ;
 
     
     if ((!flag_must1) && (charge1 < charge_threshold_max) && (charge1!=0 || disable_mix_dead_cell) ) continue;
@@ -144,6 +148,9 @@ void WCPPID::calc_sampling_points(WCP::GeomDataSource& gds, WCP::SlimMergeGeomCe
       bool flag_must2 = false;
       if (min_wires_set.find(*it1)!=min_wires_set.end()) flag_must2 = true;
       double charge2 =mcell->Get_Wire_Charge(*it1);
+
+      // if (!disable_mix_dead_cell) std::cout << "min: " << charge2 << " " << (*it1)->index() << std::endl ;
+
       if ((!flag_must2) && (charge2 < charge_threshold_min) && (charge2!=0 || disable_mix_dead_cell) ) continue;
 
       // if (flag_print) std::cout << "min wire: " << (*it1)->index() << " " << charge2 << " " << flag_must2 << " " << (charge2 < charge_threshold_min)  << " " << (charge2!=0 || disable_mix_dead_cell) << " " << charge_threshold_min << " " <<std::endl;
@@ -236,7 +243,7 @@ void WCPPID::calc_sampling_points(WCP::GeomDataSource& gds, WCP::SlimMergeGeomCe
       //std::cout << "A: " <<dis_limit[0] << " " << dis << " " << dis_limit[1] << std::endl; 
     }
   }
-  
+  // if (!disable_mix_dead_cell) std::cout << sampling_points.size() << " sampling points found." << std::endl;
   // debug
   //    if (wires_u.size() == 10 && wires_v.size() == 10 && wires_w.size() == 3){
 

@@ -13,7 +13,9 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_2(WCPPID::PR3DCluster* cluster,
   //   MCUGraph *graph = cluster->get_graph();
   //   std::cout << num_vertices(*graph) << " " << num_edges(*graph) << std::endl;
   // }
-  
+
+  std::cout << "ImproveCluster_2 " << " Orig Graph: " << num_vertices(*cluster->get_graph()) << " " << num_edges(*cluster->get_graph()) << std::endl;
+
   cluster->establish_same_mcell_steiner_edges(gds);
   
   // {
@@ -25,11 +27,14 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_2(WCPPID::PR3DCluster* cluster,
   cluster->dijkstra_shortest_paths(wcps1.first);
   cluster->cal_shortest_path(wcps1.second);
 
+  std::cout << "ImproveCluster_2 " << " Origi Shortest path indices: " << cluster->get_path_wcps().size() << " ; Graphvertices: " << num_vertices(*cluster->get_graph()) << " edges: " << num_edges(*cluster->get_graph()) << std::endl;
   // {
   //   std::cout << cluster->get_path_wcps().size() << std::endl;
   // }
   
   cluster->remove_same_mcell_steiner_edges();
+  std::cout << "ImproveCluster_2 " << " Orig Graph: " << num_vertices(*cluster->get_graph()) << " " << num_edges(*cluster->get_graph()) << std::endl;
+
   cluster->Del_graph();
 
 
@@ -52,11 +57,15 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_2(WCPPID::PR3DCluster* cluster,
   WCP2dToy::WCPHolder *temp_holder1 = new WCP2dToy::WCPHolder();
   WCPPID::PR3DCluster *temp_cluster = WCPPID::Improve_PR3DCluster_1(cluster,ct_point_cloud, gds,temp_holder1);
   WCPPID::calc_sampling_points(gds,temp_cluster,nrebin, frame_length, unit_dis,false);
+
   
   ToyPointCloud* ref_point_cloud = cluster->get_point_cloud();
   temp_cluster->Create_point_cloud();
   temp_cluster->Create_graph(ct_point_cloud, ref_point_cloud);
-  
+
+  std::cout << "ImproveCluster_1: " << temp_cluster->get_point_cloud()->get_num_points() << " points created " << temp_cluster->get_mcells().size() << std::endl;
+
+  std::cout << "ImproveCluster_2: " << " Temp Graph: " << num_vertices(*temp_cluster->get_graph()) << " " << num_edges(*temp_cluster->get_graph()) << std::endl;
 
   // {
   //   MCUGraph *graph = temp_cluster->get_graph();
@@ -73,7 +82,14 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_2(WCPPID::PR3DCluster* cluster,
   temp_cluster->establish_same_mcell_steiner_edges(gds,false);
   temp_cluster->dijkstra_shortest_paths(wcps.first);
   temp_cluster->cal_shortest_path(wcps.second);
+
+  std::cout << "ImproveCluster_2: " << " Temp Shortest path indices: " << temp_cluster->get_path_wcps().size() << " ; Graph vertices: " << num_vertices(*temp_cluster->get_graph()) << " edges: " << num_edges(*temp_cluster->get_graph()) << std::endl;
+
+
   temp_cluster->remove_same_mcell_steiner_edges();
+
+  std::cout << "ImproveCluster_2: " << " Temp Graph: " << num_vertices(*temp_cluster->get_graph()) << " " << num_edges(*temp_cluster->get_graph()) << std::endl;
+
   temp_cluster->Del_graph();
   temp_cluster->Del_point_cloud();
 
@@ -464,7 +480,7 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_1(WCPPID::PR3DCluster* cluster,
     // recreate the merge cells
     tiling.init_good_cells_with_charge(u_time_chs, v_time_chs, w_time_chs, time_ch_charge_map, time_ch_charge_err_map);  
   }
-  
+  std::cout << "ImproveCluster_1: " <<  cluster->get_mcells().size() << " " << holder->get_cells().size() << " cells created." << std::endl;
   
   // examine the newly create merged cells
   std::map<int,SMGCSelection> old_time_mcells_map;
@@ -621,6 +637,8 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_1(WCPPID::PR3DCluster* cluster,
     
    
   }
+
+
   
   
 
@@ -635,6 +653,8 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster_1(WCPPID::PR3DCluster* cluster,
       //      std::cout << time_slice << " " << mcell->get_q() << std::endl;
     }
   }
+
+  std::cout << "ImproveCluster_1: " << holder->get_cells().size() - new_cluster->get_mcells().size() << " cells removed." << std::endl;
   
   //std::cout << cluster->get_cluster_id() << " " << old_mcells.size() << " " << u_time_chs.size() << " " << WCholder->get_ncell() << " " << WCholder->get_nwire() << " " << new_mcells_set.size() << std::endl;
   //Point p(150*units::cm, 35*units::cm, 532*units::cm);
@@ -733,6 +753,13 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster(WCPPID::PR3DCluster* cluster, T
   std::vector<std::pair<int, int> > dead_uch_ranges = ct_point_cloud.get_overlap_dead_chs(min_time, max_time, min_uch, max_uch, 0, false);
   std::vector<std::pair<int, int> > dead_vch_ranges = ct_point_cloud.get_overlap_dead_chs(min_time, max_time, min_vch, max_vch, 1, false);
   std::vector<std::pair<int, int> > dead_wch_ranges = ct_point_cloud.get_overlap_dead_chs(min_time, max_time, min_wch, max_wch, 2, false);
+
+
+  // std::cout << "dead_uch_ranges: ";
+  // for (const auto& range : dead_uch_ranges) {
+  //   std::cout << "[" << range.first << ", " << range.second << "] ";
+  // }
+  // std::cout << std::endl;
 
   
   for (int time_slice = min_time; time_slice <= max_time; time_slice ++){
@@ -928,9 +955,17 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster(WCPPID::PR3DCluster* cluster, T
   // }
   
   
-  //  std::cout << u_time_chs.size() << " Xin1: " << v_time_chs.size() << " " << w_time_chs.size() << " " << time_ch_charge_map.size() << std::endl;
+  // //  std::cout << u_time_chs.size() << " Xin1: " << v_time_chs.size() << " " << w_time_chs.size() << " " << time_ch_charge_map.size() << std::endl;
 
   std::list<WCPointCloud<double>::WCPoint>& wcps = cluster->get_path_wcps();
+
+  // if (!wcps.empty()) {
+  //   std::cout << "Path check: " << wcps.size()
+  //             << " first: (" << wcps.front().x << ", " << wcps.front().y << ", " << wcps.front().z << ")"
+  //             << " last: (" << wcps.back().x << ", " << wcps.back().y << ", " << wcps.back().z << ")"
+  //             << std::endl;
+  // }
+
   if (wcps.size()>1){
     // add in missing pieces based on trajectory points
 
@@ -992,7 +1027,7 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster(WCPPID::PR3DCluster* cluster, T
       }
       // path_pts_counts.push_back(nu+nv+nw);
       
-      //  std::cout << "Path: " << (*it).x/units::cm << " " << (*it).y/units::cm << " " << (*it).z/units::cm << " " << path_pts_flag.back() << std::endl;
+      // std::cout << "Path: " << (*it).x/units::cm << " " << (*it).y/units::cm << " " << (*it).z/units::cm << " " << path_pts_flag.back() << std::endl;
     }
 
     // std::cout << path_pts.size() << " " << path_pts_flag.size() << " " << cluster->get_cluster_id() << std::endl;
@@ -1069,7 +1104,64 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster(WCPPID::PR3DCluster* cluster, T
     // recreate the merged wires
     // recreate the merge cells
     tiling.init_good_cells_with_charge(u_time_chs, v_time_chs, w_time_chs, time_ch_charge_map, time_ch_charge_err_map);  
+ 
+    // //  debug ...
+    // std::cout << "Slice: [" << time_slice * 4 << ", " << (time_slice+1)*4 << ") ";
+    // std::cout << "Layer 2 ";
+    // if (!it->second.empty()) {
+    //   auto ch_it = it->second.begin();
+    //   int range_start = *ch_it;
+    //   int prev_ch = *ch_it;
+    //   ++ch_it;
+    //   for (; ch_it != it->second.end(); ++ch_it) {
+    //     if (*ch_it != prev_ch + 1) {
+    //       std::cout << "[" << range_start << ", " << prev_ch << ") ";
+    //       range_start = *ch_it;
+    //     }
+    //     prev_ch = *ch_it;
+    //   }
+    //   std::cout << "[" << range_start << ", " << prev_ch << ") ";
+    // }
+    // std::cout << "Layer 3 ";
+    // auto it1 = v_time_chs.find(time_slice);
+    // if (it1 != v_time_chs.end() && !it1->second.empty()) {
+    //   auto ch_it = it1->second.begin();
+    //   int range_start = *ch_it;
+    //   int prev_ch = *ch_it;
+    //   ++ch_it;
+    //   for (; ch_it != it1->second.end(); ++ch_it) {
+    //     if (*ch_it != prev_ch + 1) {
+    //       std::cout << "[" << range_start-2400 << ", " << prev_ch-2400 << ") ";
+    //       range_start = *ch_it;
+    //     }
+    //     prev_ch = *ch_it;
+    //   }
+    //   std::cout << "[" << range_start-2400 << ", " << prev_ch-2400 << ") ";
+    // }
+    // std::cout << "Layer 4 ";
+    // auto it2 = w_time_chs.find(time_slice);
+    // if (it2 != w_time_chs.end() && !it2->second.empty()) {
+    //   auto ch_it = it2->second.begin();
+    //   int range_start = *ch_it;
+    //   int prev_ch = *ch_it;
+    //   ++ch_it;
+    //   for (; ch_it != it2->second.end(); ++ch_it) {
+    //     if (*ch_it != prev_ch + 1) {
+    //       std::cout << "[" << range_start-4800 << ", " << prev_ch-4800 << ") ";
+    //       range_start = *ch_it;
+    //     }
+    //     prev_ch = *ch_it;
+    //   }
+    //   std::cout << "[" << range_start-4800 << ", " << prev_ch-4800 << ") ";
+    // }
+    // std::cout << std::endl;
   }
+
+ 
+  
+  std::cout << "ImproveCluster_2: new cluster " << holder->get_cells().size() << " cells" << std::endl;
+
+
 
   // order the original mcells
   std::map<int,SMGCSelection> old_time_mcells_map;
@@ -1239,6 +1331,9 @@ WCPPID::PR3DCluster* WCPPID::Improve_PR3DCluster(WCPPID::PR3DCluster* cluster, T
     }
   }
  
+  std::cout << "ImproveCluster_2: " << holder->get_cells().size() - new_cluster->get_mcells().size() << " cells removed." << std::endl;
+
+
   
   //std::cout << cluster->get_cluster_id() << " " << old_mcells.size() << " " << u_time_chs.size() << " " << WCholder->get_ncell() << " " << WCholder->get_nwire() << " " << new_mcells_set.size() << std::endl;
   //Point p(150*units::cm, 35*units::cm, 532*units::cm);

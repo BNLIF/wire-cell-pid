@@ -14,29 +14,42 @@ void WCPPID::PR3DCluster::create_steiner_graph(WCP::ToyCTPointCloud& ct_point_cl
     WCPPID::PR3DCluster *new_cluster = WCPPID::Improve_PR3DCluster_2(this, ct_point_cloud, gds, temp_holder, nrebin, frame_length, unit_dis); 
     
     WCPPID::calc_sampling_points(gds,new_cluster,nrebin, frame_length, unit_dis,false);
-    
+
+
     
     new_cluster->Create_point_cloud(); 
     new_cluster->Create_graph(ct_point_cloud, point_cloud);
 
-    /* { */
-    /*   MCUGraph *graph = new_cluster->get_graph(); */
-    /*   std::cout << num_vertices(*graph) << " " << num_edges(*graph) << " " << new_cluster->get_point_cloud()->get_num_points() << std::endl; */
-    /* } */
-    
+    std::cout << "ImproveCluster_2: " << new_cluster->get_point_cloud()->get_num_points() << " points created " << new_cluster->get_mcells().size() << std::endl;
+
+    std::cout << "CreateSteinerTree: Graph vertices " << num_vertices(*new_cluster->get_graph()) << " edges " << num_edges(*new_cluster->get_graph()) << " points " << new_cluster->get_point_cloud()->get_num_points() << std::endl;
+
     new_cluster->establish_same_mcell_steiner_edges(gds,false);
+
     // find the shortest path
     std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = new_cluster->get_two_boundary_wcps(); 
+
+    std::cout << "CreateSteinerTree: " << wcps.first.x << " " << wcps.first.y << " " << wcps.first.z << " | " << wcps.second.x << " " << wcps.second.y << " " << wcps.second.z << std::endl;
+
     new_cluster->dijkstra_shortest_paths(wcps.first); 
     new_cluster->cal_shortest_path(wcps.second);
+
+    std::cout << "CreateSteinerTree: Shortest path indices " << new_cluster->get_path_wcps().size() << " Graph vertices " << num_vertices(*new_cluster->get_graph()) << " edges " << num_edges(*new_cluster->get_graph()) << " points " << new_cluster->get_point_cloud()->get_num_points() << std::endl;
+
     new_cluster->remove_same_mcell_steiner_edges();
+    std::cout << "CreateSteinerTree: Graph vertices " << num_vertices(*new_cluster->get_graph()) << " edges " << num_edges(*new_cluster->get_graph()) << " points " << new_cluster->get_point_cloud()->get_num_points() << std::endl;
+
     
     point_cloud_steiner = new ToyPointCloud();
 
     // steiner tree with some basic cuts ...
     graph_steiner = new_cluster->Create_steiner_tree(point_cloud_steiner, flag_steiner_terminal, gds, mcells, true, false);
     establish_same_mcell_steiner_edges(gds,true,2);
-    
+
+    size_t num_true_terminals = std::count(flag_steiner_terminal.begin(), flag_steiner_terminal.end(), true);
+
+    std::cout << "CreateSteinerTree: steiner graph with " << num_vertices(*graph_steiner) << " vertices and " << num_edges(*graph_steiner) << " edges " <<  point_cloud_steiner->get_num_points() << " " << num_true_terminals << std::endl;
+
     new_cluster->Del_graph();
     new_cluster->Del_point_cloud();
     
@@ -50,7 +63,7 @@ void WCPPID::PR3DCluster::create_steiner_graph(WCP::ToyCTPointCloud& ct_point_cl
     WCP::WC2DPointCloud<double>& cloud_w = point_cloud_steiner->get_cloud_w();
     for (size_t i=0;i!=flag_steiner_terminal.size();i++){
       if (flag_steiner_terminal[i]){
-	point_cloud_steiner_terminal->AddPoint(cloud.pts[i],cloud_u.pts[i],cloud_v.pts[i],cloud_w.pts[i]);
+	         point_cloud_steiner_terminal->AddPoint(cloud.pts[i],cloud_u.pts[i],cloud_v.pts[i],cloud_w.pts[i]);
       }
     }
     
@@ -172,7 +185,7 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
   // find all the steiner terminal indices ...
   find_steiner_terminals(gds, disable_dead_mix_cell);
   
-  
+  std::cout << "Test1: " << steiner_terminal_indices.size() << " steiner terminals found." << std::endl;
   
   // form point cloud 
   WCP::ToyPointCloud temp_pcloud;
@@ -183,43 +196,44 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
       
     for (auto it = path_wcps.begin(); it!=path_wcps.end(); it++){
       if (temp_pcloud.get_num_points()==0){
-	WCP::Point p((*it).x, (*it).y, (*it).z);
-	std::tuple<int, int, int> wire_index = std::make_tuple((*it).index_u, (*it).index_v, (*it).index_w);
-	temp_pcloud.AddPoint(p, wire_index ,0);
-      }else{
-	WCP::Point p((*it).x, (*it).y, (*it).z);
-	std::tuple<int, int, int> wire_index = std::make_tuple((*it).index_u, (*it).index_v, (*it).index_w);
+        WCP::Point p((*it).x, (*it).y, (*it).z);
+        std::tuple<int, int, int> wire_index = std::make_tuple((*it).index_u, (*it).index_v, (*it).index_w);
+        temp_pcloud.AddPoint(p, wire_index ,0);
+            }else{
+        WCP::Point p((*it).x, (*it).y, (*it).z);
+        std::tuple<int, int, int> wire_index = std::make_tuple((*it).index_u, (*it).index_v, (*it).index_w);
 
-	float step_dis = 0.6*units::cm;
-	float dis = sqrt(pow(p.x - prev_p.x,2) + pow(p.y - prev_p.y,2) + pow(p.z - prev_p.z,2));
-	
-	if (dis <= step_dis){
-	  temp_pcloud.AddPoint(p, wire_index, 0);
-	  prev_p = p;
-	  prev_wire_index = wire_index;
-	}else{
-	  int num_steps = dis/step_dis;
-	  for (int qx = 0; qx!=num_steps;qx ++){
-	    WCP::Point temp_p(prev_p.x + (p.x-prev_p.x)/num_steps*(qx+1),
-				 prev_p.y + (p.y-prev_p.y)/num_steps*(qx+1),
-				 prev_p.z + (p.z-prev_p.z)/num_steps*(qx+1)
-				 );
-	    std::tuple<int, int, int> temp_wire_index = std::make_tuple(int(std::get<0>(prev_wire_index) + (std::get<0>(wire_index) - std::get<0>(prev_wire_index))*(qx+1.0)/num_steps),
-								        int(std::get<1>(prev_wire_index) + (std::get<1>(wire_index) - std::get<1>(prev_wire_index))*(qx+1.0)/num_steps),
-									int(std::get<2>(prev_wire_index) + (std::get<2>(wire_index) - std::get<2>(prev_wire_index))*(qx+1.0)/num_steps)
-									);
-	    temp_pcloud.AddPoint(temp_p, temp_wire_index, 0);
-	  }
-	  temp_pcloud.AddPoint(p, wire_index, 0);
-	  prev_p = p;
-	  prev_wire_index = wire_index;
-	}
+        float step_dis = 0.6*units::cm;
+        float dis = sqrt(pow(p.x - prev_p.x,2) + pow(p.y - prev_p.y,2) + pow(p.z - prev_p.z,2));
+      
+      if (dis <= step_dis){
+        temp_pcloud.AddPoint(p, wire_index, 0);
+        prev_p = p;
+        prev_wire_index = wire_index;
+      }else{
+        int num_steps = dis/step_dis;
+        for (int qx = 0; qx!=num_steps;qx ++){
+          WCP::Point temp_p(prev_p.x + (p.x-prev_p.x)/num_steps*(qx+1),
+            prev_p.y + (p.y-prev_p.y)/num_steps*(qx+1),
+            prev_p.z + (p.z-prev_p.z)/num_steps*(qx+1)
+            );
+          std::tuple<int, int, int> temp_wire_index = std::make_tuple(int(std::get<0>(prev_wire_index) + (std::get<0>(wire_index) - std::get<0>(prev_wire_index))*(qx+1.0)/num_steps),
+                            int(std::get<1>(prev_wire_index) + (std::get<1>(wire_index) - std::get<1>(prev_wire_index))*(qx+1.0)/num_steps),
+                      int(std::get<2>(prev_wire_index) + (std::get<2>(wire_index) - std::get<2>(prev_wire_index))*(qx+1.0)/num_steps)
+                      );
+          temp_pcloud.AddPoint(temp_p, temp_wire_index, 0);
+        }
+        temp_pcloud.AddPoint(p, wire_index, 0);
+        prev_p = p;
+        prev_wire_index = wire_index;
+      }
 	
       }
     }
-    temp_pcloud.build_kdtree_index();
-    
+    temp_pcloud.build_kdtree_index();  
   }
+
+
   // organize mcells
   std::map<int,SMGCSelection> old_time_mcells_map;
   for (auto it = old_mcells.begin(); it!=old_mcells.end(); it++){
@@ -243,6 +257,9 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
     int time_slice = cloud.pts[*it].mcell->GetTimeSlice();
     bool flag_remove = true;
 
+
+    // std::cout << "Test: " << *it << " " << old_time_mcells_map.size() << std::endl;
+
     //    if (cloud.pts[*it].y/units::cm >-100 && cloud.pts[*it].y/units::cm<-50) 
     //std::cout << cloud.pts[*it].x/units::cm << " " <<
     //	cloud.pts[*it].y/units::cm << " " <<
@@ -250,82 +267,82 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
     
     if (old_time_mcells_map.find(time_slice)!=old_time_mcells_map.end()){
       for (auto it1 = old_time_mcells_map[time_slice].begin(); it1!= old_time_mcells_map[time_slice].end(); it1++){
-	SlimMergeGeomCell *mcell = *it1;
-	 int u1_low_index = mcell->get_uwires().front()->index();
-	 int u1_high_index = mcell->get_uwires().back()->index();
-	 
-	 int v1_low_index = mcell->get_vwires().front()->index();
-	 int v1_high_index = mcell->get_vwires().back()->index();
-	 
-	 int w1_low_index = mcell->get_wwires().front()->index();
-	 int w1_high_index = mcell->get_wwires().back()->index();
+        SlimMergeGeomCell *mcell = *it1;
+        int u1_low_index = mcell->get_uwires().front()->index();
+        int u1_high_index = mcell->get_uwires().back()->index();
+        
+        int v1_low_index = mcell->get_vwires().front()->index();
+        int v1_high_index = mcell->get_vwires().back()->index();
+        
+        int w1_low_index = mcell->get_wwires().front()->index();
+        int w1_high_index = mcell->get_wwires().back()->index();
 
-	  /* if (cloud.pts[*it].y/units::cm <-100) */
-	  /*   std::cout << cloud.pts[*it].index_u << " " << u1_low_index << " " << u1_high_index << ", " */
-	  /* 	      << cloud.pts[*it].index_v << " " << v1_low_index << " " << v1_high_index << ", " */
-	  /* 	      << cloud.pts[*it].index_w << " " << w1_low_index << " " << w1_high_index << ", " << std::endl; */
-	 
-	 if (cloud.pts[*it].index_u <= u1_high_index +1&&
-	     cloud.pts[*it].index_u >= u1_low_index -1&&
-	     cloud.pts[*it].index_v <= v1_high_index +1&&
-	     cloud.pts[*it].index_v >= v1_low_index -1&&
-	     cloud.pts[*it].index_w <= w1_high_index +1&&
-	     cloud.pts[*it].index_w >= w1_low_index -1){
-	   flag_remove = false;
-	   break;
-	 }
+          /* if (cloud.pts[*it].y/units::cm <-100) */
+          /*   std::cout << cloud.pts[*it].index_u << " " << u1_low_index << " " << u1_high_index << ", " */
+          /* 	      << cloud.pts[*it].index_v << " " << v1_low_index << " " << v1_high_index << ", " */
+          /* 	      << cloud.pts[*it].index_w << " " << w1_low_index << " " << w1_high_index << ", " << std::endl; */
+        
+        if (cloud.pts[*it].index_u <= u1_high_index +1&&
+            cloud.pts[*it].index_u >= u1_low_index -1&&
+            cloud.pts[*it].index_v <= v1_high_index +1&&
+            cloud.pts[*it].index_v >= v1_low_index -1&&
+            cloud.pts[*it].index_w <= w1_high_index +1&&
+            cloud.pts[*it].index_w >= w1_low_index -1){
+          flag_remove = false;
+          break;
+        }
       }
     }
     
     if (flag_remove){
       //+1 time slice
       if (old_time_mcells_map.find(time_slice+1)!=old_time_mcells_map.end()){
-	for (auto it1 = old_time_mcells_map[time_slice+1].begin(); it1!= old_time_mcells_map[time_slice+1].end(); it1++){
-	  SlimMergeGeomCell *mcell = *it1;
-	  int u1_low_index = mcell->get_uwires().front()->index();
-	  int u1_high_index = mcell->get_uwires().back()->index();
-	  
-	  int v1_low_index = mcell->get_vwires().front()->index();
-	  int v1_high_index = mcell->get_vwires().back()->index();
-	  
-	  int w1_low_index = mcell->get_wwires().front()->index();
-	  int w1_high_index = mcell->get_wwires().back()->index();
-	  if (cloud.pts[*it].index_u <= u1_high_index +1&&
-	      cloud.pts[*it].index_u >= u1_low_index -1&&
-	      cloud.pts[*it].index_v <= v1_high_index +1&&
-	      cloud.pts[*it].index_v >= v1_low_index -1&&
-	      cloud.pts[*it].index_w <= w1_high_index +1&&
-	      cloud.pts[*it].index_w >= w1_low_index -1){
-	    flag_remove = false;
-	    break;
-	  }
-	}
+        for (auto it1 = old_time_mcells_map[time_slice+1].begin(); it1!= old_time_mcells_map[time_slice+1].end(); it1++){
+          SlimMergeGeomCell *mcell = *it1;
+          int u1_low_index = mcell->get_uwires().front()->index();
+          int u1_high_index = mcell->get_uwires().back()->index();
+          
+          int v1_low_index = mcell->get_vwires().front()->index();
+          int v1_high_index = mcell->get_vwires().back()->index();
+          
+          int w1_low_index = mcell->get_wwires().front()->index();
+          int w1_high_index = mcell->get_wwires().back()->index();
+          if (cloud.pts[*it].index_u <= u1_high_index +1&&
+              cloud.pts[*it].index_u >= u1_low_index -1&&
+              cloud.pts[*it].index_v <= v1_high_index +1&&
+              cloud.pts[*it].index_v >= v1_low_index -1&&
+              cloud.pts[*it].index_w <= w1_high_index +1&&
+              cloud.pts[*it].index_w >= w1_low_index -1){
+            flag_remove = false;
+            break;
+          }
+        }
       }
     }
 
     if (flag_remove){
       //-1
       if (old_time_mcells_map.find(time_slice-1)!=old_time_mcells_map.end()){
-	for (auto it1 = old_time_mcells_map[time_slice-1].begin(); it1!= old_time_mcells_map[time_slice-1].end(); it1++){
-	  SlimMergeGeomCell *mcell = *it1;
-	  int u1_low_index = mcell->get_uwires().front()->index();
-	  int u1_high_index = mcell->get_uwires().back()->index();
-	  
-	  int v1_low_index = mcell->get_vwires().front()->index();
-	  int v1_high_index = mcell->get_vwires().back()->index();
-	  
-	  int w1_low_index = mcell->get_wwires().front()->index();
-	  int w1_high_index = mcell->get_wwires().back()->index();
-	  if (cloud.pts[*it].index_u <= u1_high_index +1&&
-	      cloud.pts[*it].index_u >= u1_low_index -1&&
-	      cloud.pts[*it].index_v <= v1_high_index +1&&
-	      cloud.pts[*it].index_v >= v1_low_index -1&&
-	      cloud.pts[*it].index_w <= w1_high_index +1&&
-	      cloud.pts[*it].index_w >= w1_low_index -1){
-	    flag_remove = false;
-	    break;
-	  }
-	}
+        for (auto it1 = old_time_mcells_map[time_slice-1].begin(); it1!= old_time_mcells_map[time_slice-1].end(); it1++){
+          SlimMergeGeomCell *mcell = *it1;
+          int u1_low_index = mcell->get_uwires().front()->index();
+          int u1_high_index = mcell->get_uwires().back()->index();
+          
+          int v1_low_index = mcell->get_vwires().front()->index();
+          int v1_high_index = mcell->get_vwires().back()->index();
+          
+          int w1_low_index = mcell->get_wwires().front()->index();
+          int w1_high_index = mcell->get_wwires().back()->index();
+          if (cloud.pts[*it].index_u <= u1_high_index +1&&
+              cloud.pts[*it].index_u >= u1_low_index -1&&
+              cloud.pts[*it].index_v <= v1_high_index +1&&
+              cloud.pts[*it].index_v >= v1_low_index -1&&
+              cloud.pts[*it].index_w <= w1_high_index +1&&
+              cloud.pts[*it].index_w >= w1_low_index -1){
+            flag_remove = false;
+            break;
+          }
+        }
       }
     }
     
@@ -341,15 +358,16 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
       double dis_2dv = (temp_pcloud.get_closest_2d_dis(p,1)).second;
       double dis_2dw = (temp_pcloud.get_closest_2d_dis(p,2)).second;
 
+
+      // std::cout << "Test1: " << p << " " << dis_3d << " " << dis_2du << " " << dis_2dv << " " << dis_2dw << std::endl;
       /* if(cluster_id == 2){ */
-      
       //}
       
       if ((dis_2du < 1.8*units::cm && dis_2dv < 1.8*units::cm ||
 	   dis_2du < 1.8*units::cm && dis_2dw < 1.8*units::cm ||
 	   dis_2dv < 1.8*units::cm && dis_2dw < 1.8*units::cm ) && 
-	  dis_3d > 6 * units::cm)
-	flag_remove = true;
+	   dis_3d > 6 * units::cm)
+	    flag_remove = true;
     }
 
     /* if (flag_remove) */
@@ -367,12 +385,15 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
     steiner_terminal_indices.erase(*it);
   }
 
+
+ std::cout << "Test3: " << steiner_terminal_indices.size() << " steiner terminals found." << std::endl;
+
    // figure out the extreme points ...
   std::vector<std::vector<WCPointCloud<double>::WCPoint>> extreme_wcps = get_extreme_wcps(1, &old_time_mcells_map);
   for (size_t i=0;i!=extreme_wcps.size();i++){
     for (size_t j = 0; j!=extreme_wcps.at(i).size(); j++){
       if (steiner_terminal_indices.find(extreme_wcps.at(i).at(j).index)==steiner_terminal_indices.end()){
-	steiner_terminal_indices.insert(extreme_wcps.at(i).at(j).index);
+	        steiner_terminal_indices.insert(extreme_wcps.at(i).at(j).index);
 	//terminals.push_back(extreme_wcps.at(i).at(j).index);
 	/* std::cout << extreme_wcps.at(i).at(j).x/units::cm << " " << */
 	/*   extreme_wcps.at(i).at(j).y/units::cm << " " << */
@@ -380,6 +401,9 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
       }
     }
   }
+
+  std::cout << "Test4: " << steiner_terminal_indices.size() << " steiner terminals found." << std::endl;
+
 
   // form the tree ... 
   std::vector<int> terminals(steiner_terminal_indices.begin(), steiner_terminal_indices.end());
@@ -558,6 +582,8 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
   point_cloud_steiner->build_kdtree_index();
   //std::cout << point_cloud_steiner->get_num_points() << " " << flag_steiner_terminal.size() << std::endl;
   
+  temp_map_new_old_indices = map_new_old_indices;
+
   // fill the graph ...
   MCUGraph* graph_steiner = new MCUGraph(flag_steiner_terminal.size());
   for (auto e : unique_edges){
@@ -594,6 +620,49 @@ WCPPID::MCUGraph* WCPPID::PR3DCluster::Create_steiner_tree(WCP::ToyPointCloud *p
     auto edge = add_edge(index1, index2, temp_dis , *graph_steiner);
   } 
 
+//   {
+//   // debug 
+//   std::cout << "Test5: " <<  " Steiner Graph vertices: " << boost::num_vertices(*graph_steiner)
+//               << ", edges: " << boost::num_edges(*graph_steiner) << std::endl;
+//     WCP::WCPointCloud<double>& cloud = point_cloud_steiner->get_cloud();
+//     std::map<SlimMergeGeomCell*, std::set<int> > map_mcell_all_indices;
+        
+//     for (size_t i=0;i!=cloud.pts.size();i++){
+//       if (cloud.pts.at(i).mcell==0) continue;
+      
+//       if (map_mcell_all_indices.find(cloud.pts.at(i).mcell)==map_mcell_all_indices.end()){
+// 		std::set<int> temp_vec;
+// 		temp_vec.insert(i);
+// 		map_mcell_all_indices[cloud.pts.at(i).mcell] = temp_vec;
+//       }else{
+// 		map_mcell_all_indices[cloud.pts.at(i).mcell].insert(i);
+//       }
+//     }
+
+//     for (auto it = map_mcell_all_indices.begin(); it!=map_mcell_all_indices.end();  it++){ 
+//       std::set<int>& temp_vec = it->second;
+//       for (auto it1 = temp_vec.begin(); it1!=temp_vec.end(); it1++){
+// 		int index1 = *it1;
+// 		WCPointCloud<double>::WCPoint& wcp1 = cloud.pts[index1];
+// 		bool flag_index1 = flag_steiner_terminal[index1];
+// 			for (auto  it2 = it1; it2!=temp_vec.end();it2++){
+// 				if (it2==it1) continue;
+// 					int index2 = *it2;
+// 					bool flag_index2 = flag_steiner_terminal[index2];
+// 					WCPointCloud<double>::WCPoint& wcp2 = cloud.pts[index2];
+				
+// 				if (flag_index1 && flag_index2){
+// 					auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
+// 				}else if (flag_index1 || flag_index2){
+// 					auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
+// 				}
+// 			}
+//       }
+//     }    
+//    std::cout << "Test5: " <<  " Steiner Graph vertices: " << boost::num_vertices(*graph_steiner)
+//               << ", edges: " << boost::num_edges(*graph_steiner) << std::endl;
+// // debug
+//   }
 
   return graph_steiner;
   
@@ -693,6 +762,9 @@ std::set<int> WCPPID::PR3DCluster::find_peak_point_indices(SMGCSelection mcells,
     }
     //std::cout <<  << std::endl;
   }
+
+  // std::cout << "Xin2: candidates_set size: " << candidates_set.size() << std::endl;
+
 
   //std::cout << candidates_set.size() << std::endl;
   std::set<int> peak_indices;
@@ -901,6 +973,7 @@ std::pair<bool,double> WCPPID::PR3DCluster::calc_charge_wcp(WCP::WCPointCloud<do
   if (charge_v>charge_cut) flag_charge_v = true;
   if (charge_w>charge_cut) flag_charge_w = true;
   
+
   if (disable_dead_mix_cell){
     charge += charge_u*charge_u; ncharge ++;
     charge += charge_v*charge_v; ncharge ++;
@@ -922,7 +995,8 @@ std::pair<bool,double> WCPPID::PR3DCluster::calc_charge_wcp(WCP::WCPointCloud<do
       }
     }
 
-    
+    //  std::cout << wcp.index_u << " " << wcp.index_v << " " << wcp.index_w << " " << charge_u << " " << charge_v << " " << charge_w << " " << flag_charge_u << " " << flag_charge_v << " " << flag_charge_w << " " << bad_planes.size() << std::endl;
+
     
   }else{
     if (charge_u==0) flag_charge_u = true;

@@ -278,6 +278,10 @@ namespace WCPPID{
     // hack for debug purpose ...
     std::map<WCP::SlimMergeGeomCell*, std::set<int>> temp_cell_point_indices_map(){return cell_point_indices_map;};
 
+
+    std::map<int,int> temp_map_new_old_indices;
+
+
   protected:
     
     int cluster_id;

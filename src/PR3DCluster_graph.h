@@ -91,39 +91,41 @@ void WCPPID::PR3DCluster::establish_same_mcell_steiner_edges(WCP::GeomDataSource
       if (cloud.pts.at(i).mcell==0) continue;
       
       if (map_mcell_all_indices.find(cloud.pts.at(i).mcell)==map_mcell_all_indices.end()){
-	std::set<int> temp_vec;
-	temp_vec.insert(i);
-	map_mcell_all_indices[cloud.pts.at(i).mcell] = temp_vec;
+		std::set<int> temp_vec;
+		temp_vec.insert(i);
+		map_mcell_all_indices[cloud.pts.at(i).mcell] = temp_vec;
       }else{
-	map_mcell_all_indices[cloud.pts.at(i).mcell].insert(i);
+		map_mcell_all_indices[cloud.pts.at(i).mcell].insert(i);
       }
     }
 
     for (auto it = map_mcell_all_indices.begin(); it!=map_mcell_all_indices.end();  it++){ 
       std::set<int>& temp_vec = it->second;
       for (auto it1 = temp_vec.begin(); it1!=temp_vec.end(); it1++){
-	int index1 = *it1;
-	WCPointCloud<double>::WCPoint& wcp1 = cloud.pts[index1];
-	bool flag_index1 = flag_steiner_terminal[index1];
-	for (auto  it2 = it1; it2!=temp_vec.end();it2++){
-	  if (it2==it1) continue;
-	  int index2 = *it2;
-	  bool flag_index2 = flag_steiner_terminal[index2];
-	  WCPointCloud<double>::WCPoint& wcp2 = cloud.pts[index2];
-	  
-	  if (flag_index1 && flag_index2){
-	    auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
-	    if (edge.second)
-	      same_mcell_steiner_edges.push_back(edge.first);
-	  }else if (flag_index1 || flag_index2){
-	    auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
-	    if (edge.second)
-	      same_mcell_steiner_edges.push_back(edge.first);
-	  }
-	}
+		int index1 = *it1;
+		WCPointCloud<double>::WCPoint& wcp1 = cloud.pts[index1];
+		bool flag_index1 = flag_steiner_terminal[index1];
+			for (auto  it2 = it1; it2!=temp_vec.end();it2++){
+				if (it2==it1) continue;
+					int index2 = *it2;
+					bool flag_index2 = flag_steiner_terminal[index2];
+					WCPointCloud<double>::WCPoint& wcp2 = cloud.pts[index2];
+				
+				if (flag_index1 && flag_index2){
+					auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
+					if (edge.second)
+						same_mcell_steiner_edges.push_back(edge.first);
+				}else if (flag_index1 || flag_index2){
+					auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph_steiner);
+					if (edge.second)
+						same_mcell_steiner_edges.push_back(edge.first);
+				}
+			}
       }
     }    
   }
+
+//   std::cout << "Test: " << same_mcell_steiner_edges.size() << " edges established for same mcell steiner edges." << std::endl;
   
 }
 
@@ -517,11 +519,15 @@ void WCPPID::PR3DCluster::Create_graph(WCP::ToyCTPointCloud& ct_point_cloud, WCP
   if (point_cloud==(ToyPointCloud*)0)
     Create_point_cloud();
 
-
   
   
   const int N = point_cloud->get_num_points();
   graph = new MCUGraph(N);
+
+
+  if (ref_point_cloud != 0)
+     std::cout << "Graph Creation " << mcells.size() << " " << get_num_points() << " using reference filtering " << " " << ref_point_cloud->get_num_points() << std::endl;
+
 
 
   //  std::cout << "test1 " << std::endl; 
@@ -549,6 +555,7 @@ void WCPPID::PR3DCluster::Create_graph(WCP::ToyPointCloud* ref_point_cloud){
   
   //std::cout << "test " << std::endl; 
   Establish_close_connected_graph();
+  
   Connect_graph(ref_point_cloud);
   //std::cout <<"Create Graph! " << cluster_id  << " " << N << std::endl;
   //Connect_graph(ref_point_cloud);
@@ -709,7 +716,8 @@ void WCPPID::PR3DCluster::Establish_close_connected_graph(){
 	    int index2 = wcp2.index;
 	    // add edge ...
 	    auto edge = add_edge(index1,index2,WCPPID::EdgeProp(sqrt(pow(wcp1.x-wcp2.x,2)+pow(wcp1.y-wcp2.y,2)+pow(wcp1.z-wcp2.z,2))),*graph);
-	    //	    std::cout << index1 << " " << index2 << " " << edge.second << std::endl;
+	    
+		// std::cout << mcell->GetTimeSlice()*4 << " " << (*mcell->get_uwires().begin())->index() << " " << (*mcell->get_vwires().begin())->index() << " " << (*mcell->get_wwires().begin())->index() << " " << index1 << " " << index2 << " " << edge.second << std::endl;
 	    if (edge.second){
 	      num_edges ++;
 	    }
@@ -829,7 +837,9 @@ void WCPPID::PR3DCluster::Establish_close_connected_graph(){
       }
     }
   }
-  
+//  std::cout << "Connected mcells across time slices: " << connected_mcells.size() << std::endl;
+
+
   // establish edge ... 
   std::map<std::pair<int,int>, std::set<std::pair<double,int> > > closest_index;
 
@@ -1124,6 +1134,9 @@ void WCPPID::PR3DCluster::Establish_close_connected_graph(){
     }
   }
 
+//    std::cout << closest_index.size() << " closest index entries created" << std::endl;
+
+
   for (auto it4 = closest_index.begin(); it4!=closest_index.end(); it4++){
     int index1 = it4->first.first;
     //std::cout << it4->second.size() << std::endl;
@@ -1132,9 +1145,13 @@ void WCPPID::PR3DCluster::Establish_close_connected_graph(){
       int index2 = (*it5).second;
       double dis = (*it5).first;
       auto edge = add_edge(index1,index2,WCPPID::EdgeProp(dis),*graph);
+
+	  if (edge.second)
+	//   std::cout << "Adding edge " << index1 << " " << index2 << " " << dis << " " << edge.second << std::endl;
+
       if (edge.second){
 	//      (*graph)[edge.first].dist = dis;
-	num_edges ++;
+		num_edges ++;
       }
       // protect against dead cells ...
       if (it5 == it4->second.begin() && dis > 0.25*units::cm)

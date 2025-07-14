@@ -206,28 +206,35 @@ std::vector<std::vector<WCPointCloud<double>::WCPoint>> WCPPID::PR3DCluster::get
     saved_wcps.push_back(wcps[1]);
     out_vec_wcps.push_back(saved_wcps);
   }
-  
+
+    // std::cout << out_vec_wcps.at(0).size() << " " << out_vec_wcps.at(1).size() << " " << out_vec_wcps.size() << std::endl;
+
+
   // std::cout << std::endl;
   for (int i=2;i!=8;i++){
     //if (cluster_id==16)
-    //std::cout << i << " C " << wcps[i].x/units::cm << " " << wcps[i].y/units::cm << " " << wcps[i].z/units::cm << std::endl;
     
+
     bool flag_save = true;
     for (size_t j=0;j!=out_vec_wcps.size(); j++){
       double dis = sqrt(pow(out_vec_wcps[j].at(0).x-wcps[i].x,2) + pow(out_vec_wcps[j].at(0).y - wcps[i].y,2) + pow(out_vec_wcps[j].at(0).z - wcps[i].z,2));
       if (dis < 5*units::cm){
-	out_vec_wcps.at(j).push_back(wcps[i]);
-	flag_save = false;
-	break;
+        out_vec_wcps.at(j).push_back(wcps[i]);
+        flag_save = false;
+        break;
       }
     }
     
+        // std::cout << i << " C " << wcps[i].x/units::cm << " " << wcps[i].y/units::cm << " " << wcps[i].z/units::cm << " " << flag_save << std::endl;
+
+
     if (flag_save){
       std::vector<WCPointCloud<double>::WCPoint> saved_wcps;
       saved_wcps.push_back(wcps[i]);
       out_vec_wcps.push_back(saved_wcps);
     }
   }
+
 
   return out_vec_wcps;  
 }
