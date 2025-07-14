@@ -837,24 +837,22 @@ int main(int argc, char* argv[])
         //    std::cout << "Xin " << (*it2)->get_num_mcells() << " " << (*it2)->get_num_points() << std::endl;
         // }
 
-        {
-          main_cluster->Create_graph();
-          auto graph = main_cluster->get_graph();
-          std::cout << "CreateSteinerGraph " << boost::num_vertices(*graph) << " vertices " << boost::num_edges(*graph) << " edges" << std::endl;
-          ToyPointCloud *steiner_pc = new ToyPointCloud();
-          std::vector<bool> flag_steiner_terminal;
-          WCP::SMGCSelection old_mcells = main_cluster->get_mcells();
-          auto temp_steiner_graph = main_cluster->Create_steiner_tree(steiner_pc,flag_steiner_terminal, gds, old_mcells, false, false); // no path, no dead mix
-          size_t num_true_terminals = std::count(flag_steiner_terminal.begin(), flag_steiner_terminal.end(), true);
-          std::cout << "CreateSteinerGraph: " << "steiner_graph with " 
-                      << boost::num_vertices(*temp_steiner_graph) << " vertices and "
-                      << boost::num_edges(*temp_steiner_graph) << " edges." << " " << flag_steiner_terminal.size() << " " << num_true_terminals << std::endl;
-        }
+        // {
+        //   main_cluster->Create_graph();
+        //   auto graph = main_cluster->get_graph();
+        //   std::cout << "CreateSteinerGraph " << boost::num_vertices(*graph) << " vertices " << boost::num_edges(*graph) << " edges" << std::endl;
+        //   ToyPointCloud *steiner_pc = new ToyPointCloud();
+        //   std::vector<bool> flag_steiner_terminal;
+        //   WCP::SMGCSelection old_mcells = main_cluster->get_mcells();
+        //   auto temp_steiner_graph = main_cluster->Create_steiner_tree(steiner_pc,flag_steiner_terminal, gds, old_mcells, false, false); // no path, no dead mix
+        //   size_t num_true_terminals = std::count(flag_steiner_terminal.begin(), flag_steiner_terminal.end(), true);
+        //   std::cout << "CreateSteinerGraph: " << "steiner_graph with " 
+        //               << boost::num_vertices(*temp_steiner_graph) << " vertices and "
+        //               << boost::num_edges(*temp_steiner_graph) << " edges." << " " << flag_steiner_terminal.size() << " " << num_true_terminals << std::endl;
+        // }
 
 
 
-        
-        
 
 
         // // std::cout << "Xin2: " << temp_map.size() <<  " Graph vertices: " << boost::num_vertices(*graph) << ", edges: " << boost::num_edges(*graph) << std::endl;
