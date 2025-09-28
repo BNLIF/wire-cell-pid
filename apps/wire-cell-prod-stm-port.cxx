@@ -418,6 +418,9 @@ int main(int argc, char* argv[])
 								   1./time_slice_width, 1./pitch_u, 1./pitch_v, 1./pitch_w, // slope
 								   angle_u,angle_v,angle_w,// angle
 								   3*units::cm, 117*units::cm, -116*units::cm, 0*units::cm, 1037*units::cm, 0*units::cm, 256*units::cm, flag_data);
+
+
+
   
   // load cells ... 
   GeomCellSelection mcells;
@@ -682,8 +685,8 @@ int main(int argc, char* argv[])
       SlimMergeGeomCell *mcell = *it;
       int time_slice = mcell->GetTimeSlice();
       if (global_wc_map.find(time_slice)==global_wc_map.end()){
-	std::map<const GeomWire*, SMGCSelection> temp_wc_map;
-	global_wc_map[time_slice] = temp_wc_map;
+	      std::map<const GeomWire*, SMGCSelection> temp_wc_map;
+	      global_wc_map[time_slice] = temp_wc_map;
       }
       std::map<const GeomWire*, SMGCSelection>& timeslice_wc_map = global_wc_map[time_slice];
       
@@ -692,40 +695,40 @@ int main(int argc, char* argv[])
       GeomWireSelection& wwires = mcell->get_wwires();
       std::vector<WirePlaneType_t> bad_planes = mcell->get_bad_planes();
       if (find(bad_planes.begin(),bad_planes.end(),WirePlaneType_t(0))==bad_planes.end()){
-	for (int j=0;j!=uwires.size();j++){
-	  const GeomWire *wire = uwires.at(j);
-	  if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
-	    SMGCSelection temp_mcells;
-	    temp_mcells.push_back(mcell);
-	    timeslice_wc_map[wire] = temp_mcells;
-	  }else{
-	    timeslice_wc_map[wire].push_back(mcell);
-	  }
-	}
+        for (int j=0;j!=uwires.size();j++){
+          const GeomWire *wire = uwires.at(j);
+          if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
+            SMGCSelection temp_mcells;
+            temp_mcells.push_back(mcell);
+            timeslice_wc_map[wire] = temp_mcells;
+          }else{
+            timeslice_wc_map[wire].push_back(mcell);
+          }
+        }
       }
       if (find(bad_planes.begin(),bad_planes.end(),WirePlaneType_t(1))==bad_planes.end()){
-	for (int j=0;j!=vwires.size();j++){
-	  const GeomWire *wire = vwires.at(j);
-	  if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
-	    SMGCSelection temp_mcells;
-	    temp_mcells.push_back(mcell);
-	     timeslice_wc_map[wire] = temp_mcells;
-	  }else{
-	    timeslice_wc_map[wire].push_back(mcell);
-	  }
-	}
+        for (int j=0;j!=vwires.size();j++){
+          const GeomWire *wire = vwires.at(j);
+          if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
+            SMGCSelection temp_mcells;
+            temp_mcells.push_back(mcell);
+            timeslice_wc_map[wire] = temp_mcells;
+          }else{
+            timeslice_wc_map[wire].push_back(mcell);
+          }
+        }
       }
       if (find(bad_planes.begin(),bad_planes.end(),WirePlaneType_t(2))==bad_planes.end()){
-	for (int j=0;j!=wwires.size();j++){
-	  const GeomWire *wire = wwires.at(j);
-	  if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
-	    SMGCSelection temp_mcells;
-	    temp_mcells.push_back(mcell);
-	    timeslice_wc_map[wire] = temp_mcells;
-	  }else{
-	    timeslice_wc_map[wire].push_back(mcell);
-	  }
-	}
+        for (int j=0;j!=wwires.size();j++){
+          const GeomWire *wire = wwires.at(j);
+          if (timeslice_wc_map.find(wire)==timeslice_wc_map.end()){
+            SMGCSelection temp_mcells;
+            temp_mcells.push_back(mcell);
+            timeslice_wc_map[wire] = temp_mcells;
+          }else{
+            timeslice_wc_map[wire].push_back(mcell);
+          }
+        }
       }
     }
   }
@@ -741,6 +744,15 @@ int main(int argc, char* argv[])
 
   // test the fiducial volume cut 
   fid->set_offset_t(offset_t);
+
+  // // validate the ToyFiducial ... temporary ...
+  // {
+  //   WCP::Point p(0,0,2), p1(41.8*units::cm, 26.5*units::cm,707.0*units::cm), p2(41.8*units::cm, 16.5*units::cm,707.0*units::cm);
+  //   std::cout << "ToyFiducial: " << fid->inside_dead_region(p) << " " << fid->inside_dead_region(p1) << " " << fid->inside_dead_region(p2) << std::endl;
+
+  // }
+
+
   
   ToyCTPointCloud ct_point_cloud(0,2399,2400,4799,4800,8255, // channel range
 				 offset_t, -first_u_dis/pitch_u, -first_v_dis/pitch_v, -first_w_dis/pitch_w, // offset
@@ -958,17 +970,107 @@ int main(int argc, char* argv[])
       // if (main_cluster->get_point_cloud_steiner()!=0){
       // 	if (main_cluster->get_point_cloud_steiner()->get_num_points() >= 2){
       // 	  std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = main_cluster->get_two_boundary_wcps(2); 
-      // 	  main_cluster->dijkstra_shortest_paths(wcps.first,2); 
-      // 	  main_cluster->cal_shortest_path(wcps.second,2);
+      //     std::cout << "End Points: " << wcps.first.x << " " << wcps.first.y << " " << wcps.first.z << " | " << wcps.second.x << " " << wcps.second.y << " " << wcps.second.z << std::endl;
+      //     // // hack end points ...
+      //     // wcps.second.x = 215.532;
+      //     // wcps.second.y =  -95.1674;
+      //     // wcps.second.z =  211.193;
+
+      // 	  //main_cluster->dijkstra_shortest_paths(wcps.first,2); 
+      // 	  //main_cluster->cal_shortest_path(wcps.second,2);
+      //     main_cluster->do_rough_path(wcps.first, wcps.second);
+      //     std::cout << main_cluster->get_path_wcps().size() << " points on the main path " << std::endl;
+      //     // for (const auto& wcp : main_cluster->get_path_wcps()) {
+      //     //   std::cout << "Path point: x=" << wcp.x << " y=" << wcp.y << " z=" << wcp.z << std::endl;
+      //     // }
+
+      //     // // Create ToyPointCloud and insert all path_wcps into it
+      //     // ToyPointCloud* segment = new ToyPointCloud();
+      //     // for (const auto& wcp : main_cluster->get_path_wcps()) {
+      //     //   WCPointCloud<double>::WCPoint temp_wcp = wcp;
+      //     //   segment->AddPoint(temp_wcp);
+      //     // }
+      //     // segment->build_kdtree_index();
+          
+      //     // // Test functionality similar to the requested example
+      //     // WCP::Point test_p(10, 10, 10);
+          
+      //     // if (segment->get_num_points() > 0) {
+      //     //   // Get closest point using available methods
+      //     //   auto closest_result = segment->get_closest_point(test_p);
+      //     //   double closest_3d_distance = closest_result.first;
+            
+      //     //   // Get closest 2D distances for each plane
+      //     //   auto closest_2d_u = segment->get_closest_2d_dis(test_p, 0);
+      //     //   auto closest_2d_v = segment->get_closest_2d_dis(test_p, 1);
+      //     //   auto closest_2d_w = segment->get_closest_2d_dis(test_p, 2);
+            
+      //     //   std::cout << "Test point analysis: 3D distance=" << closest_3d_distance/units::cm 
+      //     //             << " U plane distance=" << closest_2d_u.second/units::cm
+      //     //             << " V plane distance=" << closest_2d_v.second/units::cm
+      //     //             << " W plane distance=" << closest_2d_w.second/units::cm << std::endl;
+            
+      //     //   std::cout << closest_2d_u.first << " " << closest_2d_v.first << " " << closest_2d_w.first << std::endl;
+      //     // }
+          
+      //     // delete segment;
+
       // 	}
-      // 	if (main_cluster->get_path_wcps().size()>=2){
-      // 	  main_cluster->collect_charge_trajectory(ct_point_cloud);
-      // 	  main_cluster->do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
-      // 	}
+      // // 	if (main_cluster->get_path_wcps().size()>=2){
+      // //     int ncount = 0;
+      // //     for (const auto& wc_map_entry : global_wc_map) {
+      // //       ncount += wc_map_entry.second.size();
+      // //     }
+
+      // //     std::cout << main_cluster->get_path_wcps().size() << " " << main_cluster->get_num_mcells() << " " << ncount << std::endl;
+
+      // // 	  main_cluster->collect_charge_trajectory(ct_point_cloud);
+
+      // //     // std::cout << " " << " " << global_wc_map.size() << " " << flash_time << std::endl;
+
+      // // 	  main_cluster->do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+      	
+      // //     {        
+      // //       // Print fitted points with dQ and dx
+      // //       PointVector& fitted_points = main_cluster->get_fine_tracking_path();
+      // //       std::vector<double>& dQ = main_cluster->get_dQ();
+      // //       std::vector<double>& dx = main_cluster->get_dx();
+            
+      // //       for (size_t point_idx = 0; point_idx < fitted_points.size(); point_idx++) {
+      // //         double dq_val = (point_idx < dQ.size()) ? dQ.at(point_idx) : 0.0;
+      // //         double dx_val = (point_idx < dx.size()) ? dx.at(point_idx) : 0.0;
+      // //         std::cout << "Point " << point_idx << ": position=(" 
+      // //                   << fitted_points.at(point_idx).x/units::cm << ", " 
+      // //                   << fitted_points.at(point_idx).y/units::cm << ", " 
+      // //                   << fitted_points.at(point_idx).z/units::cm 
+      // //                   << "), dQ=" << dq_val << ", dx=" << dx_val/units::cm << std::endl;
+      // //       }
+      // //     }
+      // //     std::cout << "After Search other tracks" << std::endl;
+      // //     main_cluster->clear_fit_tracks();
+      // //   	main_cluster->search_other_tracks(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+      // //     bool flag_other_tracks = fid->check_other_tracks(main_cluster, offset_x);
+      // //     std::cout << 	"Check Other Tracks: " << flag_other_tracks << std::endl;
+      // //     bool flag_other_clusters = fid->check_other_clusters(main_cluster, additional_clusters);
+      // //     std::cout << 	"Check Other Clusters: " << flag_other_clusters << std::endl;
+
+      // //     Point mid_p = main_cluster->adjust_rough_path(); 
+      // //     std::cout << "Adjust path " << mid_p << std::endl;
+
+      // //     int kink_num = fid->find_first_kink(main_cluster);
+      // //     std::cout << "Kink :" << kink_num << std::endl;
+
+      // //     bool flag_proton = fid->detect_proton(main_cluster, kink_num);
+      // //     std::cout << "Proton " << flag_proton << std::endl;
+
+      // //     bool flag_eval_stm = fid->eval_stm(main_cluster, kink_num, 5*units::cm, 0., 35*units::cm, true);
+      // //     std::cout << "eval_stm " << flag_eval_stm << std::endl;
+      // //   }
       // }
 
       // if STM
       bool tag_stm = fid->check_stm(main_cluster, additional_clusters, offset_x, flash_time, ct_point_cloud, global_wc_map, event_type);
+      std::cout << "STM tagger: " << tag_stm << std::endl;
       int flag_stm = 0;
 
       if( flag_glm==1 || flag_glm==3 ) {
@@ -1063,6 +1165,8 @@ int main(int argc, char* argv[])
 	  if (main_cluster->get_path_wcps().size()>=2){
 	    main_cluster->collect_charge_trajectory(ct_point_cloud);
 	    main_cluster->do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+	    
+	    
 	  }
 	}
 	  
@@ -1132,7 +1236,9 @@ int main(int argc, char* argv[])
     
     Double_t pu, pv, pw, pt;
     Double_t charge_save=1, ncharge_save=1, chi2_save=1, ndf_save=1;
+    int cluster_id;
     TTree *T_rec = new TTree("T_rec","T_rec");
+    T_rec->Branch("cluster_id",&cluster_id,"cluster_id/I");
     T_rec->Branch("x",&x,"x/D");
     T_rec->Branch("y",&y,"y/D");
     T_rec->Branch("z",&z,"z/D");
@@ -1180,25 +1286,66 @@ int main(int argc, char* argv[])
     for (auto it = live_clusters.begin(); it!=live_clusters.end(); it++){
       
       WCPPID::PR3DCluster* new_cluster = *it;
-      ndf_save = new_cluster->get_cluster_id();
+      // ndf_save = new_cluster->get_cluster_id();
       charge_save = 0;
       ncharge_save = 0;
       chi2_save = 0;
+      ndf_save = 1;
       
-      std::list<WCPointCloud<double>::WCPoint>& wcps_list = new_cluster->get_path_wcps();
-      for (auto it = wcps_list.begin(); it!=wcps_list.end(); it++){
-	x = (*it).x/units::cm;
-	y = (*it).y/units::cm;
-	z = (*it).z/units::cm;
-	
-	Point temp_p((*it).x,(*it).y,(*it).z);
-	std::vector<int> time_chs = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
-	pt = time_chs.at(0);
-	pu = time_chs.at(1);
-	pv = time_chs.at(2);
-	pw = time_chs.at(3);
-	T_rec->Fill();
+      auto point_cloud_steiner = new_cluster->get_point_cloud_steiner(); 
+      auto flag_steiner_terminal = new_cluster->get_flag_steiner_terminal();
+      auto point_cloud = new_cluster->get_point_cloud();
+
+
+      // Loop over point_cloud_steiner's points and fill them into T_rec
+      if (point_cloud_steiner != 0) {
+        WCP::WCPointCloud<double>& cloud = point_cloud_steiner->get_cloud();
+
+        std::cout << "Xin: " << new_cluster->get_cluster_id() << " " << point_cloud_steiner << " " << point_cloud <<" " << cloud.pts.size() << " " << flag_steiner_terminal.size() << std::endl;    
+
+
+        for (size_t i = 0; i < cloud.pts.size(); i++) {
+          x = cloud.pts[i].x/units::cm;
+          y = cloud.pts[i].y/units::cm;
+          z = cloud.pts[i].z/units::cm;
+
+          if (flag_steiner_terminal[i]){
+            cluster_id = 1;
+          }else{
+            cluster_id = 2;
+          }
+
+          // find the closest wcp
+          Point temp_point(x*units::cm, y*units::cm, z*units::cm);
+          WCP::WCPointCloud<double>::WCPoint& wcp = point_cloud->get_closest_wcpoint(temp_point);
+          std::pair<bool,double> result = new_cluster->calc_charge_wcp(wcp, gds, true, 4000);
+          charge_save = result.second;
+
+          Point temp_p(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z);
+          std::vector<int> time_chs = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
+          pt = time_chs.at(0);
+          pu = time_chs.at(1);
+          pv = time_chs.at(2);
+          pw = time_chs.at(3);
+
+          T_rec->Fill();
+        }
       }
+
+      // std::list<WCPointCloud<double>::WCPoint>& wcps_list = new_cluster->get_path_wcps();
+      // for (auto it = wcps_list.begin(); it!=wcps_list.end(); it++){
+      //   x = (*it).x/units::cm;
+      //   y = (*it).y/units::cm;
+      //   z = (*it).z/units::cm;
+        
+      //   Point temp_p((*it).x,(*it).y,(*it).z);
+      //   std::vector<int> time_chs = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
+      //   pt = time_chs.at(0);
+      //   pu = time_chs.at(1);
+      //   pv = time_chs.at(2);
+      //   pw = time_chs.at(3);
+      //   T_rec->Fill();
+      // }
     }
     //    cout << em("shortest path ...") << std::endl;
     
@@ -1220,17 +1367,17 @@ int main(int argc, char* argv[])
       if (pts.size()!=dQ.size() || pts.size()==0) continue;
       
       for (size_t i=0; i!=pts.size(); i++){
-	x = pts.at(i).x/units::cm;
-	y = pts.at(i).y/units::cm;
-	z = pts.at(i).z/units::cm;
-	charge_save = dQ.at(i);
-	ncharge_save = dx.at(i)/units::cm;
-	pu = tpu.at(i);
-	pv = tpv.at(i);
-	pw = tpw.at(i);
-	pt = tpt.at(i);
-	reduced_chi2 = Vreduced_chi2.at(i);
-	t_rec_charge->Fill();
+        x = pts.at(i).x/units::cm;
+        y = pts.at(i).y/units::cm;
+        z = pts.at(i).z/units::cm;
+        charge_save = dQ.at(i);
+        ncharge_save = dx.at(i)/units::cm;
+        pu = tpu.at(i);
+        pv = tpv.at(i);
+        pw = tpw.at(i);
+        pt = tpt.at(i);
+        reduced_chi2 = Vreduced_chi2.at(i);
+        t_rec_charge->Fill();
       }
       
       std::map<std::pair<int,int>, std::tuple<double,double,double> > & proj_data_u_map = cluster->get_proj_data_u_map();

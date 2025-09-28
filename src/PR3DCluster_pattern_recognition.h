@@ -19,21 +19,24 @@ void WCPPID::PR3DCluster::search_other_tracks(WCP::ToyCTPointCloud& ct_point_clo
       std::pair<double, WCP::Point> closest_dis_point = fit_tracks.at(j)->get_closest_point(p);
       std::tuple<double, double, double> closest_2d_dis = fit_tracks.at(j)->get_closest_2d_dis(p);
       if (closest_dis_point.first < search_range){
-	flag_tagged[i] = true;
-	num_tagged ++;
-	break;
+        flag_tagged[i] = true;
+        num_tagged ++;
+        break;
       }
       if (std::get<0>(closest_2d_dis) < min_dis_u) min_dis_u = std::get<0>(closest_2d_dis);
       if (std::get<1>(closest_2d_dis) < min_dis_v) min_dis_v = std::get<1>(closest_2d_dis);
       if (std::get<2>(closest_2d_dis) < min_dis_w) min_dis_w = std::get<2>(closest_2d_dis);
+
+      //  std::cout << i << " " << p.x << " " << p.y << " " << p.z  << " " << closest_dis_point.first << " " << min_dis_u/units::cm << " " << min_dis_v/units::cm << " " << min_dis_w/units::cm << std::endl;
     }
     if (!flag_tagged[i]){
       if ((min_dis_u < scaling_2d * search_range || ct_point_cloud.get_closest_dead_chs(p, 0) ) &&
 	  (min_dis_v < scaling_2d * search_range || ct_point_cloud.get_closest_dead_chs(p, 1) ) &&
 	  (min_dis_w < scaling_2d * search_range || ct_point_cloud.get_closest_dead_chs(p, 2) ) )
-	flag_tagged[i] = true;
-	  // std::cout << min_dis_u/units::cm << " " << min_dis_v/units::cm << " " << min_dis_w/units::cm << std::endl;
+	      flag_tagged[i] = true;
     }
+   
+
   }
 
   //  std::cout << num_tagged << " " << N << std::endl;
@@ -95,13 +98,13 @@ void WCPPID::PR3DCluster::search_other_tracks(WCP::ToyCTPointCloud& ct_point_clo
     if (nearest_to_source != nearest_to_target) {
       Weight temp_weight = distance[source(w, *graph_steiner)] + distance[target(w, *graph_steiner)] + edge_weight[w];
       if (map_saved_edge.find(std::make_pair(nearest_to_source, nearest_to_target))!=map_saved_edge.end()){
-	if (temp_weight < map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)].first)
-	  map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)] = std::make_pair(temp_weight,w);
+	      if (temp_weight < map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)].first)
+	        map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)] = std::make_pair(temp_weight,w);
       }else if (map_saved_edge.find(std::make_pair(nearest_to_target, nearest_to_source))!=map_saved_edge.end()){
-	if (temp_weight < map_saved_edge[std::make_pair(nearest_to_target, nearest_to_source)].first)
-	  map_saved_edge[std::make_pair(nearest_to_target, nearest_to_source)] = std::make_pair(temp_weight,w);
+        if (temp_weight < map_saved_edge[std::make_pair(nearest_to_target, nearest_to_source)].first)
+	        map_saved_edge[std::make_pair(nearest_to_target, nearest_to_source)] = std::make_pair(temp_weight,w);
       }else{
-	map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)] = std::make_pair(temp_weight,w);
+	        map_saved_edge[std::make_pair(nearest_to_source, nearest_to_target)] = std::make_pair(temp_weight,w);
       }
     }
   }
@@ -253,11 +256,33 @@ void WCPPID::PR3DCluster::search_other_tracks(WCP::ToyCTPointCloud& ct_point_clo
     dijkstra_shortest_paths(cloud.pts[(saved_cluster_points.at(*it)).first],2); 
     cal_shortest_path(cloud.pts[(saved_cluster_points.at(*it)).second],2);
     collect_charge_trajectory(ct_point_cloud);
-    do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+    
+    // std::cout << " " << " " << global_wc_map.size() << " " << flash_time << std::endl;
+
+    do_tracking(ct_point_cloud, global_wc_map, flash_time);
     if (dQ.size() >1){
       WCP::TrackInfo *track = new WCP::TrackInfo(fine_tracking_path, dQ, dx, pu, pv, pw, pt, reduced_chi2);
       fit_tracks.push_back(track);
-      //   std::cout << track->get_track_length()/units::cm << " " << track->get_medium_dQ_dx()*units::cm << " " << track->get_track_length_threshold()/units::cm << std::endl;
+      //std::cout << fit_tracks.size() << " " << track->get_track_length()/units::cm << " " << track->get_medium_dQ_dx()*units::cm << " " << track->get_track_length_threshold()/units::cm << std::endl;
+
+      // hack print ... 
+      //  {        
+      //       // Print fitted points with dQ and dx
+      //       PointVector& fitted_points = fine_tracking_path;
+      //       // std::vector<double>& dQ = main_cluster->get_dQ();
+      //       // std::vector<double>& dx = main_cluster->get_dx();
+            
+      //       for (size_t point_idx = 0; point_idx < fitted_points.size(); point_idx++) {
+      //         double dq_val = (point_idx < dQ.size()) ? dQ.at(point_idx) : 0.0;
+      //         double dx_val = (point_idx < dx.size()) ? dx.at(point_idx) : 0.0;
+      //         std::cout << "Point " << point_idx << ": position=(" 
+      //                   << fitted_points.at(point_idx).x/units::cm << ", " 
+      //                   << fitted_points.at(point_idx).y/units::cm << ", " 
+      //                   << fitted_points.at(point_idx).z/units::cm 
+      //                   << "), dQ=" << dq_val << ", dx=" << dx_val/units::cm << std::endl;
+      //       }
+      //     }
+
     }
   }
 
@@ -271,5 +296,6 @@ void WCPPID::PR3DCluster::search_other_tracks(WCP::ToyCTPointCloud& ct_point_clo
   pt = fit_tracks.front()->get_pt();
   reduced_chi2 = fit_tracks.front()->get_reduced_chi2();
   
+
 }
 

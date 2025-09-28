@@ -115,7 +115,8 @@ WCP::Point WCPPID::PR3DCluster::adjust_rough_path(){
     
     refl_angles.at(i) = angle1;
     para_angles.at(i) = angle2;
-    //    std::cout << i << " " << angle2 << " " << angle1 << " " << min_dQ_dx << std::endl;
+
+      //  std::cout << i << " " << angle1 << " " << angle2 << " " << std::endl;
   }
 
 
@@ -140,6 +141,8 @@ WCP::Point WCPPID::PR3DCluster::adjust_rough_path(){
     }
     if (nsum!=0) sum_angles=sqrt(sum_angles/nsum);
        
+                // std::cout << i << " " << min_dQ_dx << " " << para_angles.at(i) << " " << refl_angles.at(i) <<" " << sum_angles << std::endl;
+
     
     if (min_dQ_dx < 1000 && para_angles.at(i) > 10 && refl_angles.at(i) > 25){
       std::cout << "Mid_Point_Break: " << i << " " << refl_angles.at(i) << " " << para_angles.at(i) << " " << min_dQ_dx << " " << fine_tracking_path.at(i).x << " " << fine_tracking_path.at(i).y << " " << fine_tracking_path.at(i).z << std::endl;
@@ -163,6 +166,7 @@ WCP::Point WCPPID::PR3DCluster::adjust_rough_path(){
     }
       //
   }
+
 
   if (flag_crawl){
     // Start to Crawl
@@ -245,10 +249,13 @@ WCP::Point WCPPID::PR3DCluster::adjust_rough_path(){
     test_p.z = curr_wcp.z;
     curr_wcp = point_cloud_steiner->get_closest_wcpoint(test_p);
   
-    std::cout << "First, Center: " << first_wcp.x << " " << first_wcp.y << " " << first_wcp.z << " " << curr_wcp.x << " " << curr_wcp.y << " " << curr_wcp.z << std::endl;
     
   
     double dis = sqrt(pow(curr_wcp.x-last_wcp.x,2) + pow(curr_wcp.y-last_wcp.y,2) + pow(curr_wcp.z-last_wcp.z,2));
+
+    std::cout << "First, Center: " << first_wcp.x << " " << first_wcp.y << " " << first_wcp.z << " " << curr_wcp.x << " " << curr_wcp.y << " " << 
+    curr_wcp.z << " " << dis/units::cm << std::endl;
+
 
     if (dis > 1*units::cm){
       
@@ -268,6 +275,9 @@ WCP::Point WCPPID::PR3DCluster::adjust_rough_path(){
       	  it1++;
       	}
       }
+
+      // std::cout <<  temp_path_wcps.size() << " " << count << " " << path_wcps.size() << std::endl;
+
       for (int i=0;i!=count;i++){
       	if (i!=count-1){
       	  temp_path_wcps.pop_back();

@@ -56,6 +56,17 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   //  if (it->first.first + 4800 > 8256) std::cout << "abc " << it->first.first + 4800 << std::endl;
   // }
   
+  // std::cout << "Total Measurements: " << map_2D_ut_charge.size() + map_2D_vt_charge.size()  + map_2D_wt_charge.size() << std::endl;
+  // for (const auto& it : map_2D_vt_charge) {
+  //   int time = it.first.second*4;
+  //   int channel = it.first.first;
+  //   double charge = std::get<0>(it.second);
+  //   double charge_err = std::get<1>(it.second);
+  //   int flag = std::get<2>(it.second);
+  //   std::cout << "CoordReadout: (APA=0, Time=" << time << ", Channel=" << channel << ") -> Charge=" << static_cast<int>(charge)
+  //         << ", ChargeErr=" << static_cast<int>(charge_err) << ", Flag=" << flag << std::endl;
+  // }
+
 
   // first round of organizing the path from the path_wcps (shortest path)
   double low_dis_limit = 1.2*units::cm;
@@ -72,6 +83,8 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     }
   }
  
+  std::cout << "After organization " << pts.size() << std::endl;
+
 
   // for (size_t i=0;i+1!=pts.size();i++){
   //   std::cout << i << " " << pts.at(i) << " " << sqrt(pow(pts.at(i+1).x-pts.at(i).x,2)+pow(pts.at(i+1).y - pts.at(i).y,2)+pow(pts.at(i+1).z-pts.at(i).z,2))<< std::endl;
@@ -125,10 +138,15 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     low_dis_limit = 0.6*units::cm;
     end_point_limit = 0.3*units::cm;
 
-    
+   
+
+
     organize_ps_path(ct_point_cloud, pts, low_dis_limit, end_point_limit); 
     
-    
+    // std::cout << pts.size() << std::endl;
+    //  for (size_t i = 0; i < pts.size(); ++i) {
+    //   std::cout << "pts[" << i << "] = (" << pts[i].x << ", " << pts[i].y << ", " << pts[i].z << ")" << std::endl;
+    // }
     
     map_3D_2DU_set.clear();
     map_3D_2DV_set.clear();
@@ -155,7 +173,13 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     
     //  std::cout << pts.back() << std::endl;
     
-    
+    // std::cout << pts.size() << std::endl;
+    // for (size_t i = 0; i < pts.size(); ++i) {
+    //   std::cout << "pts[" << i << "] = ("
+    //             << pts[i].x << ", "
+    //             << pts[i].y << ", "
+    //             << pts[i].z << ")" << std::endl;
+    // }
     
     // examine trajectory ... // no angle at the moment ...
     //std::cout << pts.size() << std::endl;
@@ -182,6 +206,14 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   if (flag_dQ_dx){
     fine_tracking_path = pts;
     
+    // std::cout << fine_tracking_path.size() << std::endl;
+    // for (size_t i = 0; i < fine_tracking_path.size(); ++i) {
+    //   std::cout << "fine_tracking_path[" << i << "] = ("
+    //         << fine_tracking_path[i].x << ", "
+    //         << fine_tracking_path[i].y << ", "
+    //         << fine_tracking_path[i].z << ")" << std::endl;
+    // }
+
     // std::cout << pts.size() << std::endl;
     // for (size_t i=0;i+1!=pts.size();i++){
     //  std::cout << i << " " << pts.at(i) << " " << sqrt(pow(pts.at(i+1).x-pts.at(i).x,2)+pow(pts.at(i+1).y - pts.at(i).y,2)+pow(pts.at(i+1).z-pts.at(i).z,2))<< std::endl;
@@ -842,19 +874,18 @@ void WCPPID::PR3DCluster::get_projection(std::vector<int>& proj_channel, std::ve
     if (find(bad_planes.begin(),bad_planes.end(),WirePlaneType_t(0))==bad_planes.end()){
       int num_shared_wires = 0;
       for (int i=0;i!=uwires.size();i++){
-	const GeomWire *wire = uwires.at(i);
-	
-	if (timeslice_wc_map[wire].size()>1){
-	  for (auto it1 = timeslice_wc_map[wire].begin(); it1!=timeslice_wc_map[wire].end(); it1++){
-	    SlimMergeGeomCell *mcell1 = *it1;
-	    if (cluster_mcells_set.find(mcell1)==cluster_mcells_set.end())
-	      num_shared_wires ++;
-	  }
-	  //
-	}
+        const GeomWire *wire = uwires.at(i);
+        
+        if (timeslice_wc_map[wire].size()>1){
+          for (auto it1 = timeslice_wc_map[wire].begin(); it1!=timeslice_wc_map[wire].end(); it1++){
+            SlimMergeGeomCell *mcell1 = *it1;
+            if (cluster_mcells_set.find(mcell1)==cluster_mcells_set.end())
+              num_shared_wires ++;
+          }
+          //
+        }
       }
-      if (num_shared_wires >0.15*uwires.size()&&num_shared_wires>1)
-	flag_reg_save = false;
+      if (num_shared_wires >0.15*uwires.size()&&num_shared_wires>1) flag_reg_save = false;
     }else{
       flag_reg_save = false;
       flag_bad_plane = true;
@@ -862,50 +893,50 @@ void WCPPID::PR3DCluster::get_projection(std::vector<int>& proj_channel, std::ve
 
     if (flag_reg_save){
       for (int i=0;i!=uwires.size();i++){
-	const GeomWire *wire = uwires.at(i);
-	int ch = wire->channel();
-	// regular cases ... 
-	int charge = mcell->Get_Wire_Charge(wire);
-	int charge_err = mcell->Get_Wire_Charge_Err(wire);
-	
-	if (saved_time_channel.find(std::make_pair(time_slice,ch))==saved_time_channel.end()){
-	  proj_channel.push_back(ch);
-	  proj_timeslice.push_back(time_slice);
-	  proj_charge.push_back(charge);
-	  proj_charge_err.push_back(charge_err);
-	  proj_flag.push_back(1);
-	  saved_time_channel.insert(std::make_pair(time_slice,ch));
-	}
+        const GeomWire *wire = uwires.at(i);
+        int ch = wire->channel();
+        // regular cases ... 
+        int charge = mcell->Get_Wire_Charge(wire);
+        int charge_err = mcell->Get_Wire_Charge_Err(wire);
+        
+        if (saved_time_channel.find(std::make_pair(time_slice,ch))==saved_time_channel.end()){
+          proj_channel.push_back(ch);
+          proj_timeslice.push_back(time_slice);
+          proj_charge.push_back(charge);
+          proj_charge_err.push_back(charge_err);
+          proj_flag.push_back(1);
+          saved_time_channel.insert(std::make_pair(time_slice,ch));
+        }
       }
     }else{
       for (int i=0;i!=uwires.size();i++){
-	const GeomWire *wire = uwires.at(i);
-	int ch = wire->channel();
-	int temp_flag = 1;
-	int charge = mcell->Get_Wire_Charge(wire);
-	int charge_err = mcell->Get_Wire_Charge_Err(wire);
-	
-	if (charge<=0 && flag_bad_plane){
-	  charge = mcell->get_q()*1.0/uwires.size();
-	  charge_err = sqrt(pow(charge*0.1,2)+pow(600,2)); // assume 30% error
-	  temp_flag = 0;
-	}
+        const GeomWire *wire = uwires.at(i);
+        int ch = wire->channel();
+        int temp_flag = 1;
+        int charge = mcell->Get_Wire_Charge(wire);
+        int charge_err = mcell->Get_Wire_Charge_Err(wire);
+        
+        if (charge<=0 && flag_bad_plane){
+          charge = mcell->get_q()*1.0/uwires.size();
+          charge_err = sqrt(pow(charge*0.1,2)+pow(600,2)); // assume 30% error
+          temp_flag = 0;
+        }
 
-	if (charge <=0) {
-	  charge = 0;
-	  charge_err = 1000;
-	}
+        if (charge <=0) {
+          charge = 0;
+          charge_err = 1000;
+        }
 	
-	//	if(cluster_id==18)
-	//std::cout << ch << " " << time_slice << " " << charge << std::endl;
-	//	if (saved_time_channel.find(std::make_pair(time_slice,ch))==saved_time_channel.end()){
-	proj_channel.push_back(ch);
-	proj_timeslice.push_back(time_slice);
-	proj_charge.push_back(charge);
-	proj_charge_err.push_back(charge_err);
-	proj_flag.push_back(temp_flag);
-	// saved_time_channel.insert(std::make_pair(time_slice,ch));
-	  //}
+        //	if(cluster_id==18)
+        //std::cout << ch << " " << time_slice << " " << charge << std::endl;
+        //	if (saved_time_channel.find(std::make_pair(time_slice,ch))==saved_time_channel.end()){
+        proj_channel.push_back(ch);
+        proj_timeslice.push_back(time_slice);
+        proj_charge.push_back(charge);
+        proj_charge_err.push_back(charge_err);
+        proj_flag.push_back(temp_flag);
+        // saved_time_channel.insert(std::make_pair(time_slice,ch));
+	      //}
       }
     }
     

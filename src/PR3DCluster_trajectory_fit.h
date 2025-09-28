@@ -74,6 +74,16 @@ void WCPPID::PR3DCluster::trajectory_fit(WCP::PointVector& ps_vec, std::map<int,
   double offset_u = -first_u_dis/pitch_u;
   double offset_v = -first_v_dis/pitch_v;
 
+  // // Debug output (optional - can be removed)
+  // std::cout << "TrackFitting: Initialized geometry" << std::endl;
+  // std::cout << "  Offsets: T=" << offset_t << " U=" << offset_u 
+  //       << " V=" << offset_v << " W=" << offset_w << std::endl;
+  // std::cout << "  Slopes: T=" << slope_x 
+  //       << " U=(" << slope_yu << "," << slope_zu << ")"
+  //       << " V=(" << slope_yv << "," << slope_zv << ")"
+  //       << " W=(" << slope_yw << "," << slope_zw << ")" << std::endl;
+
+
    // 2D pixel and then the 3D index ...
   std::map<std::tuple<int,int, int>, double> map_Udiv_fac;
   std::map<std::tuple<int,int, int>, double> map_Vdiv_fac;
@@ -105,15 +115,19 @@ void WCPPID::PR3DCluster::trajectory_fit(WCP::PointVector& ps_vec, std::map<int,
     for (auto it = map_2DU_3D_set.begin(); it!=map_2DU_3D_set.end(); it++){
       double sum = 0;
       for (auto it1 = it->second.begin(); it1!=it->second.end(); it1++){
-  	double central_t = slope_x * ps_vec.at(*it1).x + offset_t;
-  	double central_ch = slope_yu * ps_vec.at(*it1).y + slope_zu * ps_vec.at(*it1).z + offset_u;
-  	double factor = exp(-0.5 * (pow((central_t-it->first.second)*time_slice_width,2) + pow((central_ch-it->first.first)*pitch_u,2))/pow(div_sigma,2));
-  	map_Udiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] = factor;
-  	sum += factor;
+        double central_t = slope_x * ps_vec.at(*it1).x + offset_t;
+        double central_ch = slope_yu * ps_vec.at(*it1).y + slope_zu * ps_vec.at(*it1).z + offset_u;
+        double factor = exp(-0.5 * (pow((central_t-it->first.second)*time_slice_width,2) + pow((central_ch-it->first.first)*pitch_u,2))/pow(div_sigma,2));
+
+          // std::cout << "U " << it->first.second *4 << " " << it->first.first << " " << central_t*4 << " " << central_ch << " " << factor << std::endl;
+
+        map_Udiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] = factor;
+        sum += factor;
   	//std::cout << it->first.first << " " << it->first.second << " " << *it1 << std::endl;
       }
       for (auto it1 = it->second.begin(); it1!=it->second.end(); it1++){
-  	map_Udiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] /= sum;
+  	    map_Udiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] /= sum;
+        // std::cout << "U " << it->first.second*4 << " " << it->first.first << " " << map_Udiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] << " " << sum << std::endl;
       }
     }
 
@@ -131,6 +145,7 @@ void WCPPID::PR3DCluster::trajectory_fit(WCP::PointVector& ps_vec, std::map<int,
      
       for (auto it1 = it->second.begin(); it1!=it->second.end(); it1++){
   	map_Vdiv_fac[std::make_tuple(it->first.first, it->first.second, *it1)] /= sum;
+
       }
     }
 
@@ -302,6 +317,9 @@ void WCPPID::PR3DCluster::trajectory_fit(WCP::PointVector& ps_vec, std::map<int,
        pos_3D(3*i+1) = temp_pos_3D(1);
        pos_3D(3*i+2) = temp_pos_3D(2);
      }
+      
+    //  std::cout << "Track Fitting: " << i << " " << temp_pos_3D(0) << " " << temp_pos_3D(1) << " " << temp_pos_3D(2) << std::endl;
+
   }
   
   fine_tracking_path.clear();
@@ -321,6 +339,8 @@ void WCPPID::PR3DCluster::trajectory_fit(WCP::PointVector& ps_vec, std::map<int,
     p.z = pos_3D(3*i+2);
 
     bool flag_skip = skip_trajectory_point(p, i, i, ps_vec, map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge, fine_tracking_path, offset_t, slope_x,  offset_u,  slope_yu,  slope_zu,  offset_v,  slope_yv,  slope_zv,  offset_w, slope_yw,  slope_zw);
+
+    // std::cout << "Skip: " << i << " " << flag_skip << std::endl;
 
     // protection ...
     if (flag_skip){
@@ -680,6 +700,9 @@ bool WCPPID::PR3DCluster::skip_trajectory_point(WCP::Point& p, int i, int index,
   /* 	      << u2 << " " << v2 << " " << w2 << " " << t2 << " " */
   /* 	      <<  offset_v + (slope_yv * p.y + slope_zv * p.z) << " " << offset_v + (slope_yv * ps_vec.at(i).y + slope_zv * ps_vec.at(i).z) << std::endl; */
   
+  // std::cout << "Skip inside: " << t1 * 4<< " " << u1 << " " << v1 << " " << w1 << " | " << t2*4 << " " << u2 << " " << v2 << " " << w2 << " | "  << c1_u << " " << c1_v << " " << c1_w << " " << c2_u << " " << c2_v << " " << c2_w << std::endl;
+
+
   double ratio=0;
   double ratio_1 = 1;
   if (c2_u!=0) {
@@ -713,6 +736,8 @@ bool WCPPID::PR3DCluster::skip_trajectory_point(WCP::Point& p, int i, int index,
     ratio += 1;
   }
 
+  // std::cout << "Inside: " << ratio << " " << ratio_1 << std::endl;
+
   /* if (ratio/3. >= 0.97 && ratio_1 < 1) */
   //  std::cout << i << " " << ratio/3. << " " << ratio_1 << std::endl; 
   //      if (i==88) std::cout << ratio/3. << std::endl;
@@ -736,6 +761,7 @@ bool WCPPID::PR3DCluster::skip_trajectory_point(WCP::Point& p, int i, int index,
 		p.y - fine_tracking_path.at(fine_tracking_path.size()-1).y,
 		p.z - fine_tracking_path.at(fine_tracking_path.size()-1).z);
     
+    //  std::cout << ratio << " " << ratio_1 << " (" << p.x << " " << p.y << " " <<p.z <<") (" << fine_tracking_path.at(fine_tracking_path.size()-1).x << " " << fine_tracking_path.at(fine_tracking_path.size()-1).y << " " << fine_tracking_path.at(fine_tracking_path.size()-1).z << ") (" << fine_tracking_path.at(fine_tracking_path.size()-2).x << " " << fine_tracking_path.at(fine_tracking_path.size()-2).y << " " << fine_tracking_path.at(fine_tracking_path.size()-2).z << ")" << std::endl;
     //      if (i==56)
 
     TVector3 v3(ps_vec.at(i-1).x - ps_vec.at(i-2).x, ps_vec.at(i-1).y - ps_vec.at(i-2).y, ps_vec.at(i-1).z - ps_vec.at(i-2).z);
@@ -749,6 +775,7 @@ bool WCPPID::PR3DCluster::skip_trajectory_point(WCP::Point& p, int i, int index,
     /* if (i==10) */
     /*   std::cout << i << " " << angle << " " << angle1 << " " << ps_vec.size() << " " << v2.Mag() << " " << map_3D_2DU_set[index].second << " " << map_3D_2DV_set[index].second << " " << map_3D_2DW_set[index].second << std::endl; */
 
+    // std::cout << "Inside: " << angle << " " << angle1 << " " << 0 << " " << v2.Mag() << std::endl;
     
     // related to the dead channels
     if (angle > 45 && ((map_3D_2DU_set[index].second==0 && map_3D_2DV_set[index].second==0) ||
@@ -799,7 +826,9 @@ std::vector<float> WCPPID::PR3DCluster::examine_point_association(std::vector<in
 
   for (auto it = temp_2dvt.begin(); it!=temp_2dvt.end(); it++){
     auto it1 = map_2D_vt_charge.find(*it);
+    // std::cout << "V: " << it->second << " " << it->first + 2400 << std::endl;
     if (it1!=map_2D_vt_charge.end() && std::get<0>(it1->second) > charge_cut ){
+      // std::cout << "V: " << it->second << " " << it->first +2400<< " " << std::get<0>(it1->second) << " " << charge_cut << std::endl;
       temp_types_v.insert(std::get<2>(it1->second));
       if (std::get<2>(it1->second)==0) results.at(1)++;
       saved_2dvt.insert(*it);
@@ -845,7 +874,7 @@ std::vector<float> WCPPID::PR3DCluster::examine_point_association(std::vector<in
     results.at(2) = 0;
   }
 
-  //  std::cout << saved_2dut.size() << " " << saved_2dvt.size() << " " << saved_2dwt.size() << std::endl;
+  //  std::cout << saved_2dut.size() << " " << saved_2dvt.size() << " " << saved_2dwt.size() << " " << charge_cut << std::endl;
 
   // U and V planes are dead ...
   if (saved_2dut.size()==0 && saved_2dvt.size()==0 && saved_2dwt.size()!=0){
@@ -1227,12 +1256,14 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	  nearby_mcells_set.insert(mcell);
 	}
 	
+
 	int cur_time_slice = cloud.pts[wcp.index].mcell->GetTimeSlice();
 	int cur_wire_u = cloud.pts[wcp.index].index_u;
 	int cur_wire_v = cloud.pts[wcp.index].index_v;
 	int cur_wire_w = cloud.pts[wcp.index].index_w;
 
-	//	std::cout << "A: " << cur_time_slice << " " << cur_wire_u << " " << cur_wire_v << " " << cur_wire_w << std::endl;
+	  // std::cout << nearby_mcells_set.size() << " " << cur_time_slice << " " << cur_wire_u << " " << cur_wire_v << " " << cur_wire_w << " " << dis_cut << std::endl;
+
 	
 	double dis_cut_u = dis_cut;
 	double dis_cut_v = dis_cut;
@@ -1273,14 +1304,20 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	if (max_time_slice_w * time_slice_width*1.2 < dis_cut_w)
 	  dis_cut_w = max_time_slice_w * time_slice_width*1.2;
 	
+    // std::cout << dis_cut_u << " " << dis_cut_v << " " << dis_cut_w << std::endl;
 	
 	for (auto it = nearby_mcells_set.begin(); it!=nearby_mcells_set.end(); it++){
 	  SlimMergeGeomCell *mcell = *it;
 	  int this_time_slice = mcell->GetTimeSlice();
-	  
+
+    // std::cout << "Blob info: " << mcell->get_uwires().front()->index() << " " << mcell->get_uwires().back()->index()+1 << " " << mcell->get_vwires().front()->index() << " " << mcell->get_vwires().back()->index()+1 << " " << mcell->get_wwires().front()->index() << " " << mcell->get_wwires().back()->index()+1 << " " << this_time_slice << std::endl;
+
 	  double rem_dis_cut_u = pow(dis_cut_u,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_v = pow(dis_cut_v,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_w = pow(dis_cut_w,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
+    
+    // std::cout << rem_dis_cut_u << " " << rem_dis_cut_v << " " << rem_dis_cut_w << " " << cur_time_slice << " " <<this_time_slice << " " << time_cut << std::endl;
+
 	  if ((rem_dis_cut_u>0 || rem_dis_cut_v >0 || rem_dis_cut_w > 0 ) && fabs(cur_time_slice-this_time_slice)<=time_cut){
 	    GeomWireSelection uwires = mcell->get_uwires();
 	    GeomWireSelection vwires = mcell->get_vwires();
@@ -1316,6 +1353,8 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	    float range_v = rem_dis_cut_v*coef1 - pow(min_u_dis*pitch_u,2) - coef2*pow(min_w_dis*pitch_w,2);
 	    float range_w = (rem_dis_cut_w*coef1 - pow(min_u_dis*pitch_u,2) - pow(min_v_dis*pitch_v,2))/coef2;
 	    
+      // std::cout << "Cuts: " << range_u << " " << range_v << " " << range_w << " " << min_u_dis << " " << min_v_dis << " " << min_w_dis << " " << coef1 << " " << coef2 << std::endl;
+
 	    if ( range_u > 0 && range_v >0 && range_w > 0){
 	      float low_u_limit = cur_wire_u - sqrt(range_u)/pitch_u;
 	      float high_u_limit = cur_wire_u + sqrt(range_u)/pitch_u;
@@ -1323,6 +1362,11 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	      float high_v_limit = cur_wire_v + sqrt(range_v)/pitch_v;
 	      float low_w_limit = cur_wire_w - sqrt(range_w)/pitch_w;
 	      float high_w_limit = cur_wire_w + sqrt(range_w)/pitch_w;
+
+        // std::cout << low_u_limit << " " << high_u_limit << " "
+        //                       << low_v_limit << " " << high_v_limit << " "
+        //                       << low_w_limit << " " << high_w_limit << " " << this_time_slice << std::endl;
+
 	      for (int j = std::round(low_u_limit); j<= std::round(high_u_limit); j++){
 		//auto it1 = map_2D_ut_charge.find(std::make_pair(j,this_time_slice));
 		//if (it1!=map_2D_ut_charge.end() && std::get<0>(it1->second) > 0 )
@@ -1345,68 +1389,78 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
     } // point cloud exist
   }
     
+  // std::cout << "Pixels: " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << std::endl;
+
+
   // steiner tree point cloud ...
   if (point_cloud_steiner!=0 && graph_steiner!=0 ){
     WCP::WCPointCloud<double>& cloud = point_cloud_steiner->get_cloud();
     IndexMap index = get(boost::vertex_index,*graph_steiner);
 
+
+
     if (cloud.pts.size()>0){
       WCP::WCPointCloud<double>::WCPoint wcp = point_cloud_steiner->get_closest_wcpoint(p);
       double temp_dis = sqrt(pow(wcp.x-p.x,2)+pow(wcp.y-p.y,2)+pow(wcp.z-p.z,2));
       
-      //      std::cout << temp_dis/units::cm << " " << dis_cut/units::cm << std::endl;
+      // std::cout << "Steiner graph: vertices = " << boost::num_vertices(*graph_steiner)
+      //       << ", edges = " << boost::num_edges(*graph_steiner) << std::endl;
+      // std::cout << "Steiner: " << temp_dis << " " << dis_cut << " " << p.x << " " << p.y << " " << p.z << " " << wcp.x << " " << wcp.y << " " << wcp.z << std::endl;
       if (temp_dis < dis_cut){
-	std::set<int> total_vertices_found;
-	std::set<int> vertices_to_be_examined;
-	std::set<int> vertices_saved_for_next;
-	total_vertices_found.insert(wcp.index);
-	vertices_to_be_examined.insert(wcp.index);
-	
-	for (int j=0;j!=nlevel;j++){
-	  for (auto it = vertices_to_be_examined.begin(); it!=vertices_to_be_examined.end(); it++){
-	    int temp_current_index = (*it);
-	    std::pair<adjacency_iterator, adjacency_iterator> neighbors = boost::adjacent_vertices(vertex(temp_current_index,*graph_steiner),*graph_steiner);
-	    for (; neighbors.first!=neighbors.second; ++neighbors.first){
-	      //std::cout << *neighbors.first << " " << *neighbors.second << std::endl;
-	      if (total_vertices_found.find(index(*neighbors.first))==total_vertices_found.end()){
-		total_vertices_found.insert(index(*neighbors.first));
-		vertices_saved_for_next.insert(index(*neighbors.first));
-	      }
-	    }
-	  }
-	  vertices_to_be_examined = vertices_saved_for_next;
-	}
-	
-	WCP::Point temp_p(wcp.x, wcp.y, wcp.z);
-	std::vector<int> temp_results = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
-	// std::cout << cloud.pts[wcp.index].index_u << " "  << temp_results.at(0) << " " << temp_results.at(1) << std::endl;
-	//	if (wcp.mcell!=0)
-	// std::cout << temp_results.at(0) << " " << wcp.mcell->GetTimeSlice() << std::endl;
-	int cur_time_slice = temp_results.at(0);
-	int cur_wire_u = cloud.pts[wcp.index].index_u;
-	int cur_wire_v = cloud.pts[wcp.index].index_v;
-	int cur_wire_w = cloud.pts[wcp.index].index_w;
+        std::set<int> total_vertices_found;
+        std::set<int> vertices_to_be_examined;
+        std::set<int> vertices_saved_for_next;
+        total_vertices_found.insert(wcp.index);
+        vertices_to_be_examined.insert(wcp.index);
+        
+        for (int j=0;j!=nlevel;j++){
+          for (auto it = vertices_to_be_examined.begin(); it!=vertices_to_be_examined.end(); it++){
+            int temp_current_index = (*it);
+            std::pair<adjacency_iterator, adjacency_iterator> neighbors = boost::adjacent_vertices(vertex(temp_current_index,*graph_steiner),*graph_steiner);
 
-	//	std::cout << "B: " << cur_time_slice << " " << cur_wire_u << " " << cur_wire_v << " " << cur_wire_w << std::endl;
+            // std::cout << "Level " << j << " " << temp_current_index << " " << std::endl;
+
+            for (; neighbors.first!=neighbors.second; ++neighbors.first){
+              //std::cout << *neighbors.first << " " << *neighbors.second << std::endl;
+              if (total_vertices_found.find(index(*neighbors.first))==total_vertices_found.end()){
+                total_vertices_found.insert(index(*neighbors.first));
+                vertices_saved_for_next.insert(index(*neighbors.first));
+              }
+            }
+          }
+          vertices_to_be_examined = vertices_saved_for_next;
+        }
 	
-	SMGCSet nearby_mcells_set;
-	std::vector<int> point_indices;
-	std::vector<int> point_timeslices;
+        WCP::Point temp_p(wcp.x, wcp.y, wcp.z);
+        std::vector<int> temp_results = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
+        // std::cout << cloud.pts[wcp.index].index_u << " "  << temp_results.at(0) << " " << temp_results.at(1) << std::endl;
+        //	if (wcp.mcell!=0)
+        // std::cout << temp_results.at(0) << " " << wcp.mcell->GetTimeSlice() << std::endl;
+        int cur_time_slice = temp_results.at(0);
+        int cur_wire_u = cloud.pts[wcp.index].index_u;
+        int cur_wire_v = cloud.pts[wcp.index].index_v;
+        int cur_wire_w = cloud.pts[wcp.index].index_w;
+
+        // std::cout << "B: " << cur_time_slice << " " << cur_wire_u << " " << cur_wire_v << " " << cur_wire_w << " " << total_vertices_found.size() << " " << nlevel << std::endl;
 	
-	for (auto it = total_vertices_found.begin(); it!=total_vertices_found.end(); it++){
-	  SlimMergeGeomCell *mcell = cloud.pts[*it].mcell;
-	  if (mcell!=0){
-	    nearby_mcells_set.insert(mcell);
-	  }else{
-	    temp_p.x = cloud.pts[*it].x;
-	    temp_p.y = cloud.pts[*it].y;
-	    temp_p.z = cloud.pts[*it].z;
-	    temp_results = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
-	    
-	    point_indices.push_back(*it);
-	    point_timeslices.push_back(temp_results.at(0));
-	  }
-	}
+        SMGCSet nearby_mcells_set;
+        std::vector<int> point_indices;
+        std::vector<int> point_timeslices;
+        
+        for (auto it = total_vertices_found.begin(); it!=total_vertices_found.end(); it++){
+          SlimMergeGeomCell *mcell = cloud.pts[*it].mcell;
+          if (mcell!=0){
+            nearby_mcells_set.insert(mcell);
+          }else{
+            temp_p.x = cloud.pts[*it].x;
+            temp_p.y = cloud.pts[*it].y;
+            temp_p.z = cloud.pts[*it].z;
+            temp_results = ct_point_cloud.convert_3Dpoint_time_ch(temp_p);
+            
+            point_indices.push_back(*it);
+            point_timeslices.push_back(temp_results.at(0));
+          }
+        }
 	
 	
 	
@@ -1463,6 +1517,9 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	if (max_time_slice_w * time_slice_width*1.2 < dis_cut_w)
 	  dis_cut_w = max_time_slice_w * time_slice_width*1.2;
 	
+  // std::cout << "Steiner dis: " << dis_cut_u << " " << dis_cut_v << " " << dis_cut_w << " " << nearby_mcells_set.size() << std::endl;
+
+
 	// actual cut ...
 	for (auto it = nearby_mcells_set.begin(); it!=nearby_mcells_set.end(); it++){
 	  SlimMergeGeomCell *mcell = *it;
@@ -1471,6 +1528,8 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	  double rem_dis_cut_u = pow(dis_cut_u,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_v = pow(dis_cut_v,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_w = pow(dis_cut_w,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
+
+    // std::cout << rem_dis_cut_u << " " << rem_dis_cut_v << " " << rem_dis_cut_w << " " << cur_time_slice << " " <<this_time_slice << " " << time_cut << std::endl;
 	  if ((rem_dis_cut_u>0 || rem_dis_cut_v >0 || rem_dis_cut_w > 0 ) && fabs(cur_time_slice-this_time_slice)<=time_cut){
 	    GeomWireSelection uwires = mcell->get_uwires();
 	    GeomWireSelection vwires = mcell->get_vwires();
@@ -1526,6 +1585,10 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	  } // cuts
 	} // loop over all mcells
 	
+    // std::cout << "Pixels 1: " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << std::endl;
+
+
+
 	for (size_t i=0; i!=point_indices.size(); i++){
 
 	  int this_time_slice = point_timeslices.at(i);
@@ -1536,6 +1599,9 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	  double rem_dis_cut_u = pow(dis_cut_u,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_v = pow(dis_cut_v,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
 	  double rem_dis_cut_w = pow(dis_cut_w,2) - pow((cur_time_slice - this_time_slice)*time_slice_width,2);
+
+    // std::cout << i << " " << rem_dis_cut_u << " " << rem_dis_cut_v << " " << rem_dis_cut_w << std::endl;
+
 	  if ((rem_dis_cut_u>0 || rem_dis_cut_v >0 || rem_dis_cut_w > 0 ) && fabs(cur_time_slice-this_time_slice)<=time_cut){
 	    float min_u_dis;
 	    if (cur_wire_u < this_index_u-1){
@@ -1565,6 +1631,9 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	    float range_v = rem_dis_cut_v*coef1 - pow(min_u_dis*pitch_u,2) - coef2*pow(min_w_dis*pitch_w,2);
 	    float range_w = (rem_dis_cut_w*coef1 - pow(min_u_dis*pitch_u,2) - pow(min_v_dis*pitch_v,2))/coef2;
 	    
+      // std::cout << min_u_dis << " " << min_v_dis << " " << min_w_dis << " "
+                // << range_u << " " << range_v << " " << range_w << std::endl;
+
 	    if ( range_u > 0 && range_v >0 && range_w > 0){
 	      float low_u_limit = cur_wire_u - sqrt(range_u)/pitch_u;
 	      float high_u_limit = cur_wire_u + sqrt(range_u)/pitch_u;
@@ -1589,6 +1658,8 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
       } // distance
     } // no steiner tree cloud
   }
+    // std::cout << "Pixels 2: " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << std::endl;
+
 
   // just projection ...
   if (temp_2dut.size()==0 && temp_2dvt.size()==0 && temp_2dwt.size()==0){
@@ -1655,9 +1726,13 @@ void WCPPID::PR3DCluster::form_map(WCP::ToyCTPointCloud& ct_point_cloud, WCP::Po
       dis_cut = std::min(std::max(distances.at(i-1)*mid_point_factor,distances.at(i)*mid_point_factor),4/3.*mid_point_factor*units::cm);
     }
 
+    // std::cout << i << " " << distances.at(i) << " " << end_point_factor << " " << dis_cut << std::endl;
+
+
     std::set<std::pair<int,int> > temp_2dut, temp_2dvt, temp_2dwt;
     form_point_association(pts.at(i), temp_2dut, temp_2dvt, temp_2dwt, ct_point_cloud, dis_cut, nlevel, time_cut);
     // examine ...
+    // std::cout << i << " (" << pts.at(i).x << ", " << pts.at(i).y << ", " << pts.at(i).z << ") " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << std::endl;
 
     // std::cout << (*temp_2dvt.begin()).first << " " << (*temp_2dvt.end()).second << std::endl;
 
@@ -1672,6 +1747,8 @@ void WCPPID::PR3DCluster::form_map(WCP::ToyCTPointCloud& ct_point_cloud, WCP::Po
     }else{
       temp_flag = examine_point_association(temp_results, temp_2dut, temp_2dvt, temp_2dwt, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge,false,charge_cut);
     }
+    // std::cout << i << " E (" << pts.at(i).x << ", " << pts.at(i).y << ", " << pts.at(i).z << ") " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << std::endl;
+
 
     //    std::cout << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << " " << temp_flag.at(0) << " " << temp_flag.at(1) << " " << temp_flag.at(2) << std::endl;
     // just projection ...
@@ -1714,7 +1791,9 @@ void WCPPID::PR3DCluster::form_map(WCP::ToyCTPointCloud& ct_point_cloud, WCP::Po
       count ++;
     }
   }
-  
+
+  // std::cout << "Form Map: " << pts.size() << " " << saved_pts.size() << " " << map_2DU_3D_set.size() + map_2DV_3D_set.size() + map_2DW_3D_set.size() << " " << map_3D_2DU_set.size() << std::endl;
+
   pts = saved_pts;
 }
 
@@ -1945,6 +2024,9 @@ void WCPPID::PR3DCluster::organize_ps_path(WCP::ToyCTPointCloud& ct_point_cloud,
       dis = sqrt(pow(p1.x-ps_vec.back().x,2)+pow(p1.y-ps_vec.back().y,2)+pow(p1.z-ps_vec.back().z,2));
     }
 
+    // std::cout << i << " " << dis << " " << low_dis_limit * 0.8 << " " << low_dis_limit * 1.6 << std::endl;
+
+
     // std::cout << i << " " << p1 << " " << pts.back() << " " << dis/units::cm << " " << low_dis_limit/units::cm << std::endl;
     if (dis < low_dis_limit * 0.8 ){
       continue;
@@ -2015,6 +2097,8 @@ WCP::PointVector WCPPID::PR3DCluster::organize_wcps_path(WCP::ToyCTPointCloud& c
       pts.push_back(p1);
     }
   }
+  // std::cout << "Test b: " <<  pts.size() << " (" << pts.back().x << ", " << pts.back().y << ", " << pts.back().z << ") (" << temp_wcps_vec.front().x << ", " << temp_wcps_vec.front().y << ", " << temp_wcps_vec.front().z << ")" << std::endl;
+
 
   // fill in the middle part
   for (size_t i=0;i!=temp_wcps_vec.size(); i++){
@@ -2045,6 +2129,8 @@ WCP::PointVector WCPPID::PR3DCluster::organize_wcps_path(WCP::ToyCTPointCloud& c
       }
     }
   }
+    // std::cout << "Test m: " <<  pts.size() << " (" << pts.back().x << ", " << pts.back().y << ", " << pts.back().z << ") (" << temp_wcps_vec.front().x << ", " << temp_wcps_vec.front().y << ", " << temp_wcps_vec.front().z << ")" << std::endl;
+
   
 
   // fill in the end part
@@ -2066,6 +2152,8 @@ WCP::PointVector WCPPID::PR3DCluster::organize_wcps_path(WCP::ToyCTPointCloud& c
       pts.push_back(p1);
     }
   }
+    // std::cout << "Test e: " <<  pts.size() << " (" << pts.back().x << ", " << pts.back().y << ", " << pts.back().z << ") (" << temp_wcps_vec.front().x << ", " << temp_wcps_vec.front().y << ", " << temp_wcps_vec.front().z << ")" << std::endl;
+
 
     
   

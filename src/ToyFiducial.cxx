@@ -331,8 +331,8 @@ bool WCPPID::ToyFiducial::check_other_tracks(WCPPID::PR3DCluster* main_cluster, 
 		  tracks.at(i)->get_tracking_path().front().y - tracks.at(i)->get_tracking_path().back().y,
 		  tracks.at(i)->get_tracking_path().front().z - tracks.at(i)->get_tracking_path().back().z);
 
-    std::cout << track_length1 << " " << track_medium_dQ_dx << " " << track_length_threshold << " " << inside_fiducial_volume(tracks.at(i)->get_tracking_path().front(),offset_x) << " " << tracks.at(i)->get_tracking_path().front() << " " << tracks.at(i)->get_tracking_path().back() << " " << dir1.Mag()/tracks.at(i)->get_track_length(2) << std::endl;
-    
+    // std::cout << track_length1 << " " << track_medium_dQ_dx << " " << track_length_threshold << " " << dir1.X() << " " << dir1.Y() << " " << dir1.Z() << " " << dir1.Mag()/tracks.at(i)->get_track_length(2) << std::endl;
+
     // std::cout << dir1.Mag()/units::cm << " " << tracks.at(i)->get_track_length(2)/units::cm << std::endl;
     
     if (track_length1 > 5 && track_medium_dQ_dx > 0.4) {
@@ -480,6 +480,7 @@ bool WCPPID::ToyFiducial::check_stm(WCPPID::PR3DCluster* main_cluster, std::vect
 	TVector3 tempV3(fabs(dir.X()), sqrt(dir.Y()*dir.Y()+dir.Z()*dir.Z())*sin(angle3),0);
 	double angle3_1 = tempV3.Angle(drift_dir)/3.1415926*180.;
 	
+  // std::cout << "Test: " << angle1 << " " << angle1_1 << " " << angle2 << " " << angle2_1 << " " << angle3 << " " << angle3_1 << std::endl;
 	
 	if ( (angle1_1 < 10 || angle2_1 < 10 || angle3_1 < 5)){
 	  if (!check_signal_processing(p1,dir,ct_point_cloud,1*units::cm,offset_x)){
@@ -506,7 +507,7 @@ bool WCPPID::ToyFiducial::check_stm(WCPPID::PR3DCluster* main_cluster, std::vect
       double dis1 = sqrt(pow(candidate_exit_wcps.at(i).x - wcps.first.x,2) + pow(candidate_exit_wcps.at(i).y - wcps.first.y,2) + pow(candidate_exit_wcps.at(i).z - wcps.first.z,2));
       double dis2 = sqrt(pow(candidate_exit_wcps.at(i).x - wcps.second.x,2) + pow(candidate_exit_wcps.at(i).y - wcps.second.y,2) + pow(candidate_exit_wcps.at(i).z - wcps.second.z,2));
       
-      //      std::cout << candidate_exit_wcps.at(i).x << " " << candidate_exit_wcps.at(i).y << " " << candidate_exit_wcps.at(i).z << " " << dis1 << " " << dis2 << std::endl;
+      // std::cout << "Test: " << candidate_exit_wcps.at(i).x << " " << candidate_exit_wcps.at(i).y << " " << candidate_exit_wcps.at(i).z << " " << dis1 << " " << dis2 << std::endl;
       
       // essentially one of the extreme points ...
       if (dis1 < dis2){
@@ -585,6 +586,7 @@ bool WCPPID::ToyFiducial::check_stm(WCPPID::PR3DCluster* main_cluster, std::vect
 	TVector3 tempV3(fabs(dir.X()), sqrt(dir.Y()*dir.Y()+dir.Z()*dir.Z())*sin(angle3),0);
 	double angle3_1 = tempV3.Angle(drift_dir)/3.1415926*180.;
 	
+  // std::cout << "Test: " << angle1 << " " << angle1_1 << " " << angle2 << " " << angle2_1 << " " << angle3 << " " << angle3_1 << std::endl;
 	
 	if ( (angle1_1 < 10 || angle2_1 < 10 || angle3_1 < 5)){
 	  if (!check_signal_processing(p1,dir,ct_point_cloud,1*units::cm,offset_x)){
@@ -703,7 +705,8 @@ bool WCPPID::ToyFiducial::check_stm(WCPPID::PR3DCluster* main_cluster, std::vect
 
  
   bool flag_other_clusters = check_other_clusters(main_cluster, additional_clusters);
-  //  std::cout << "haha " << flag_other_clusters << std::endl;
+   std::cout << "STM analysis: flag_double_end=" << flag_double_end 
+                  << ", flag_other_clusters=" << flag_other_clusters << std::endl;
   
   // forward check ...
   {
@@ -1067,6 +1070,8 @@ int WCPPID::ToyFiducial::find_first_kink(WCPPID::PR3DCluster* main_cluster){
 
     refl_angles.at(i) = angle1;
     para_angles.at(i) = angle2;
+
+    // std::cout << i << " " << angle1 << " " << angle2 << std::endl;
   }
 
   for (int i=0;i!=fine_tracking_path.size();i++){
@@ -1093,12 +1098,13 @@ int WCPPID::ToyFiducial::find_first_kink(WCPPID::PR3DCluster* main_cluster){
     ave_angles.at(i) = sum_angles;
     max_numbers.at(i) = max_num;
 
+    // std::cout << i << " " << sum_angles << " " << max_num << std::endl;
   }
     
   for (int i=0;i!=fine_tracking_path.size();i++){
     
     //std::cout << i << " " << refl_angles.at(i) << " " << ave_angles.at(i)  << " " << inside_fiducial_volume(fine_tracking_path.at(i)) <<  " " << fine_tracking_path.at(i) << std::endl;
-    if ((refl_angles.at(i) > 20 && ave_angles.at(i) > 10 ) && inside_fiducial_volume(fine_tracking_path.at(i))  ){
+    if ((refl_angles.at(i) > 20 && ave_angles.at(i) > 10 ) && inside_fiducial_volume(fine_tracking_path.at(i))){
       TVector3 v10(fine_tracking_path.at(i).x - fine_tracking_path.front().x,
 		   fine_tracking_path.at(i).y - fine_tracking_path.front().y,
 		   fine_tracking_path.at(i).z - fine_tracking_path.front().z);
@@ -1117,7 +1123,7 @@ int WCPPID::ToyFiducial::find_first_kink(WCPPID::PR3DCluster* main_cluster){
 	angle3p = v11.Angle(v21)/3.1415926*180.;
       }
       
-      //std::cout << angle3 << " " << angle3p << " " << v10.Mag()/units::cm << " " << v20.Mag()/units::cm << std::endl;
+      // std::cout << i << " " << angle3 << " " << angle3p << " " << v10.Mag()/units::cm << " " << v20.Mag()/units::cm << std::endl;
       
       if (angle3 < 20 && ave_angles.at(i) < 20 || angle3 < 12.5 && inside_dead_region(fine_tracking_path.at(i)) || angle3 < 7.5 || i<=4) continue;
 
@@ -1268,7 +1274,8 @@ bool WCPPID::ToyFiducial::detect_proton(WCPPID::PR3DCluster* main_cluster,int ki
   std::vector<double>& dQ = main_cluster->get_dQ();
   std::vector<double>& dx = main_cluster->get_dx();
 
-  // std::cout << main_cluster->get_fit_tracks().size() << std::endl;
+  // std::cout << main_cluster->get_fit_tracks().size() << " " << pts.size() << std::endl;
+
   Point end_p;
   if (kink_num == pts.size()){
     end_p = pts.back();
@@ -1283,13 +1290,16 @@ bool WCPPID::ToyFiducial::detect_proton(WCPPID::PR3DCluster* main_cluster,int ki
 		      pow(end_p.y - main_cluster->get_fit_tracks().at(i)->get_tracking_path().front().y,2) +
 		      pow(end_p.z - main_cluster->get_fit_tracks().at(i)->get_tracking_path().front().z,2) );
     
+    // std::cout << i << " " << dis/units::cm << " " << main_cluster->get_fit_tracks().at(i)->get_track_length()/units::cm << " " << main_cluster->get_fit_tracks().at(i)->get_medium_dQ_dx()*units::cm/50000 << std::endl;
+
+
     // protection against Michel electron
     if (dis < 1*units::cm && main_cluster->get_fit_tracks().at(i)->get_track_length()>4*units::cm && main_cluster->get_fit_tracks().at(i)->get_medium_dQ_dx()*units::cm/50000 > 0.5 )
       return false;
 
     
     
-    if (dis > 10*units::cm && main_cluster->get_fit_tracks().at(i)->get_track_length() > 4*units::cm){
+    if (dis > 10*units::cm && main_cluster->get_fit_tracks().at(i)->get_track_length() > 4*units::cm ){
       TVector3 p2(main_cluster->get_fit_tracks().at(i)->get_tracking_path().back().x - main_cluster->get_fit_tracks().at(i)->get_tracking_path().front().x,
 		  main_cluster->get_fit_tracks().at(i)->get_tracking_path().back().y - main_cluster->get_fit_tracks().at(i)->get_tracking_path().front().y,
 		  main_cluster->get_fit_tracks().at(i)->get_tracking_path().back().z - main_cluster->get_fit_tracks().at(i)->get_tracking_path().front().z);
@@ -1301,7 +1311,8 @@ bool WCPPID::ToyFiducial::detect_proton(WCPPID::PR3DCluster* main_cluster,int ki
       }else{
 	p3.SetXYZ(tp1.second.x-tp2.second.x,tp1.second.y-tp2.second.y,tp1.second.z-tp2.second.z);
       }
-
+ 
+      // std::cout << p2.X() << " " << p2.Y() << " " << p2.Z() << " " << p3.X() << " " << p3.Y() << " " << p3.Z() << std::endl;
       
       //  
       // judge direction, hack code ...
@@ -1389,6 +1400,8 @@ bool WCPPID::ToyFiducial::detect_proton(WCPPID::PR3DCluster* main_cluster,int ki
     if (end_L - L.at(i) < 35*units::cm && end_L - L.at(i) > 3*units::cm){
       vec_x.push_back(end_L-L.at(i));
       vec_y.push_back(dQ_dx.at(i));
+
+      // std::cout << ncount << " " << vec_x.back() << " " << vec_y.back() << std::endl;
       ncount ++;
     }
 
@@ -1572,7 +1585,7 @@ bool WCPPID::ToyFiducial::eval_stm(WCPPID::PR3DCluster* main_cluster,int kink_nu
 		   );
   }
   
-  //std::cout << "Test: " << res_length/units::cm << " " << ave_res_dQ_dx << " " << res_length1/units::cm << " " << res_dis1/units::cm << std::endl;
+  // std::cout << "Test: " << res_length/units::cm << " " << ave_res_dQ_dx << " " << res_length1/units::cm << " " << res_dis1/units::cm << std::endl;
   
   TH1F *h1 = new TH1F("h1","h1",ncount,0,ncount);
   TH1F *h2 = new TH1F("h2","h2",ncount,0,ncount);

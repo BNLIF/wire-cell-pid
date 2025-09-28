@@ -13,20 +13,21 @@ std::vector<std::pair<double, double> >  WCPPID::PR3DCluster::cal_compact_matrix
     
     for (Eigen::SparseMatrix<double>::InnerIterator it(RWT,k); it; ++it){
 
+      // std::cout << "Row: " << it.row() << ", Col: " <<  it.col() << ", Value: " << it.value() << std::endl; 
       if (map_2D_3D.find(it.col()) != map_2D_3D.end()){
-	map_2D_3D[it.col()].insert(it.row());
+	      map_2D_3D[it.col()].insert(it.row());
       }else{
-	std::set<int> temp_set;
-	temp_set.insert(it.row());
-	map_2D_3D[it.col()] = temp_set;
+        std::set<int> temp_set;
+        temp_set.insert(it.row());
+        map_2D_3D[it.col()] = temp_set;
       }
       
       if (map_3D_2D.find(it.row())!=map_3D_2D.end()){
-	map_3D_2D[it.row()].insert(it.col());
+	      map_3D_2D[it.row()].insert(it.col());
       }else{
-	std::set<int> temp_set;
-	temp_set.insert(it.col());
-	map_3D_2D[it.row()] = temp_set;
+        std::set<int> temp_set;
+        temp_set.insert(it.col());
+        map_3D_2D[it.row()] = temp_set;
       }
       
       map_pair_val[std::make_pair(it.row(), it.col())] = it.value();
@@ -58,6 +59,8 @@ std::vector<std::pair<double, double> >  WCPPID::PR3DCluster::cal_compact_matrix
       if (count_2D[col] > 2) flag = 1;
       // std::cout << row << " " << count_2D[col] << " " << val << std::endl;
     }
+    // std::cout << row << " " << sum1 << " " << sum2 << " " << flag << std::endl;
+
     ave_count.at(row) = std::make_pair(sum1/sum2, flag);
   }
   
@@ -101,14 +104,14 @@ std::vector<std::pair<double, double> >  WCPPID::PR3DCluster::cal_compact_matrix
     if (it1!=map_3D_2D.end()){
       std::vector<int> common_results(it->second.size());
       {
-	auto it3 = std::set_intersection(it->second.begin(), it->second.end(), it1->second.begin(), it1->second.end(), common_results.begin());
-	common_results.resize(it3-common_results.begin());
+        auto it3 = std::set_intersection(it->second.begin(), it->second.end(), it1->second.begin(), it1->second.end(), common_results.begin());
+        common_results.resize(it3-common_results.begin());
       }
       for (auto it3 = common_results.begin(); it3!=common_results.end(); it3++){
-	int col = *it3;
-	//	std::cout << col << " ";
-	double val = map_pair_val[std::make_pair(row, col)];
-	sum[1] += 1;//val;
+        int col = *it3;
+        //	std::cout << col << " ";
+        double val = map_pair_val[std::make_pair(row, col)];
+        sum[1] += 1;//val;
       }
       // std::cout << std::endl;
     }
@@ -116,15 +119,19 @@ std::vector<std::pair<double, double> >  WCPPID::PR3DCluster::cal_compact_matrix
     if (it2!=map_3D_2D.end()){
       std::vector<int> common_results(it->second.size());
       {
-	auto it3 = std::set_intersection(it->second.begin(), it->second.end(), it2->second.begin(), it2->second.end(), common_results.begin());
-	common_results.resize(it3-common_results.begin());
+        auto it3 = std::set_intersection(it->second.begin(), it->second.end(), it2->second.begin(), it2->second.end(), common_results.begin());
+        common_results.resize(it3-common_results.begin());
       }
       for (auto it3 = common_results.begin(); it3!=common_results.end(); it3++){
-	int col = *it3;
-	double val = map_pair_val[std::make_pair(row, col)];
-	sum[2] += 1;//val;
+        int col = *it3;
+        double val = map_pair_val[std::make_pair(row, col)];
+        sum[2] += 1;//val;
       }
     }
+
+    // std::cout << row << " " << sum[0] << " " << sum[1] << " " << sum[2] << std::endl;
+
+
     results.at(row).first = sum[1]/sum[0];
     results.at(row).second = sum[2]/sum[0];
     //    std::cout << row << " " << sum[1]/sum[0] << " " << sum[2]/sum[0] << std::endl;
@@ -140,6 +147,8 @@ double WCPPID::PR3DCluster::cal_gaus_integral_seg(int tbin, int wbin, std::vecto
   for (size_t i=0;i!=t_centers.size();i++){
     result += cal_gaus_integral(tbin,wbin,t_centers.at(i), t_sigmas.at(i), w_centers.at(i), w_sigmas.at(i),flag,nsigma) * weights.at(i);
     result1 += weights.at(i);
+  
+    // std::cout << cal_gaus_integral(tbin,wbin,t_centers.at(i), t_sigmas.at(i), w_centers.at(i), w_sigmas.at(i),flag,nsigma) << " " << weights.at(i) << std::endl;
   }
 
   result /= result1;
@@ -160,6 +169,8 @@ double WCPPID::PR3DCluster::cal_gaus_integral(int tbin, int wbin, double t_cente
 
     if (flag ==0){
       result *= 0.5*(std::erf((wbin+1-w_center)/sqrt(2.)/w_sigma)-std::erf((wbin-w_center)/sqrt(2.)/w_sigma));
+
+      // std::cout << tbin << " " << t_center << " " << t_sigma << " " << (tbin+1-t_center)/sqrt(2.)/t_sigma << " " << (tbin-t_center)/sqrt(2.)/t_sigma << " " << 0.5*(std::erf((tbin+1-t_center)/sqrt(2.)/t_sigma)-std::erf((tbin-t_center)/sqrt(2.)/t_sigma)) << " | " << 0.5*(std::erf((wbin+1-w_center)/sqrt(2.)/w_sigma)-std::erf((wbin-w_center)/sqrt(2.)/w_sigma)) << std::endl;
     }else if (flag==1){
 
       double x2 = wbin + 1.5;
@@ -432,6 +443,15 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
   //std::set<int> good_channels_set =
   update_data_dQ_dx_fit(global_wc_map, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
 
+
+  std::cout << "dQ/dx: " << map_2D_ut_charge.size() << " " << map_2D_vt_charge.size() << " " << map_2D_wt_charge.size() << std::endl; 
+  // for (const auto& item : map_2D_ut_charge) {
+  //   std::cout << "U: (" << item.first.second*4 << ", " << item.first.first << ") -> ("
+  //         << std::get<0>(item.second) << ", "
+  //         << std::get<1>(item.second) << ", "
+  //         << std::get<2>(item.second) << ")" << std::endl;
+  // }
+
   int n_3D_pos = fine_tracking_path.size();
   int n_2D_u = map_2D_ut_charge.size();
   int n_2D_v = map_2D_vt_charge.size();
@@ -459,6 +479,9 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
 	data_u_2D(n_u) = 0;
       if (std::isnan(data_u_2D(n_u)))
 	std::cout << "U: " << data_u_2D(n_u) << " " << std::get<1>(it->second) << " " << std::get<0>(it->second)*rel_uncer_ind << " " << std::endl;
+
+  // std::cout << it->first.second*4 << " " << it->first.first << " " << std::get<0>(it->second) << " " << std::get<1>(it->second) << " " << data_u_2D(n_u) << std::endl;
+
       n_u ++;
     }
     int n_v = 0;
@@ -551,6 +574,8 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
     pt.push_back(offset_t + slope_xt * curr_rec_pos.x );
     
     
+    // std::cout << i << " " << dx.back() << std::endl;
+
     
     std::vector<double> centers_U ;
     std::vector<double> centers_V ;
@@ -619,6 +644,9 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
       diff_sigma_L = sqrt(2* DL * drift_time);
       diff_sigma_T = sqrt(2* DT * drift_time);
 
+      // std::cout << drift_time << " " << DL << " " << DT << " " << diff_sigma_L << " " << diff_sigma_T << " " << ind_sigma_u_T << std::endl;
+
+
       sigma_L = sqrt(pow(diff_sigma_L,2) + pow(add_sigma_L,2))/time_slice_width;
       sigma_T_u = sqrt(pow(diff_sigma_T,2) + pow(ind_sigma_u_T,2))/pitch_u;
       sigma_T_v = sqrt(pow(diff_sigma_T,2) + pow(ind_sigma_v_T,2))/pitch_v;
@@ -638,21 +666,76 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
       sigmas_T.push_back(sigma_L);
     }
     
+    // std::cout << i << " ";
+    //  for (size_t idx = 0; idx < centers_U.size(); ++idx) {
+    //         std::cout << centers_U[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    // std::cout << i << " V ";
+    //     for (size_t idx = 0; idx < centers_V.size(); ++idx) {
+    //         std::cout << centers_V[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " W ";
+    //     for (size_t idx = 0; idx < centers_W.size(); ++idx) {
+    //         std::cout << centers_W[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " T ";
+    //     for (size_t idx = 0; idx < centers_T.size(); ++idx) {
+    //         std::cout << centers_T[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " Weights ";
+    //     for (size_t idx = 0; idx < weights.size(); ++idx) {
+    //         std::cout << weights[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout <<i << " SU ";
+    //     for (size_t idx = 0; idx < sigmas_U.size(); ++idx) {
+    //         std::cout << sigmas_U[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " SV ";
+    //     for (size_t idx = 0; idx < sigmas_V.size(); ++idx) {
+    //         std::cout << sigmas_V[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " SW ";
+    //     for (size_t idx = 0; idx < sigmas_W.size(); ++idx) {
+    //         std::cout << sigmas_W[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i << " ST ";
+    //     for (size_t idx = 0; idx < sigmas_T.size(); ++idx) {
+    //         std::cout << sigmas_T[idx] << " ";
+    //     }
+    //     std::cout << std::endl;
+
     int n_u = 0;
     double sum_u = 0;
     for (auto it = map_2D_ut_charge.begin(); it!= map_2D_ut_charge.end(); it++){
       if (fabs(it->first.first - centers_U.front()) <= 10 &&
       	  fabs(it->first.second - centers_T.front()) <= 10 ){
-	double value = cal_gaus_integral_seg(it->first.second, it->first.first,centers_T, sigmas_T, centers_U, sigmas_U, weights , 0 , 4);
-	sum_u += value;
-	// near dead channels ...
-	if (std::get<2>(it->second)==0 && value > 0) reg_flag_u.at(i) = 1;
-	
-	if (value > 0 && std::get<0>(it->second) >0 && std::get<2>(it->second)!=0){
-	  // if (i!=143)
-	  RU.insert(n_u,i) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2));
-	  // if (i==143) std::cout << "U: " << it->first.first << " " << it->first.second << " " << value << std::endl;
-	}
+            double value = cal_gaus_integral_seg(it->first.second, it->first.first,centers_T, sigmas_T, centers_U, sigmas_U, weights , 0 , 4);
+            sum_u += value;
+            // near dead channels ...
+            if (std::get<2>(it->second)==0 && value > 0) reg_flag_u.at(i) = 1;
+            
+            if (value > 0 && std::get<0>(it->second) >0 && std::get<2>(it->second)!=0){
+              // if (i!=143)
+              RU.insert(n_u,i) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2));
+              // if (i==143) std::cout << "U: " << it->first.first << " " << it->first.second << " " << value << std::endl;
+              // std::cout << n_u << " " << i << " " << it->first.second*4 << " " << it->first.first << " " << i << " " << value / sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2)) << std::endl;
+            }
       }
       n_u ++;
     }
@@ -695,12 +778,13 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
 	
 	
 		
-	// relevant && charge > 0 && not dead channel ...
-	if (value > 0 && std::get<0>(it->second) >0 && std::get<2>(it->second)!=0){
-	  // if (i!=143)
-	  RW.insert(n_w,i) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_col,2) + pow(add_uncer_col,2));
-	  //  if (i==147) std::cout << "W: " << it->first.first << " " << it->first.second << " " << value << std::endl;
-	}
+        // relevant && charge > 0 && not dead channel ...
+        if (value > 0 && std::get<0>(it->second) >0 && std::get<2>(it->second)!=0){
+          // if (i!=143)
+          RW.insert(n_w,i) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_col,2) + pow(add_uncer_col,2));
+          //  if (i==147) std::cout << "W: " << it->first.first << " " << it->first.second << " " << value << std::endl;
+          // std::cout << n_w << " " << i << " " << it->first.second*4 << " " << it->first.first << " " << i << " " << value / sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_col,2) + pow(add_uncer_col,2)) << std::endl;
+        }
       }
       n_w ++;
     }
@@ -732,6 +816,8 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
       }
     }
 
+    // std::cout << i << " " << reg_flag_u.at(i) << " " << reg_flag_v.at(i) << " " << reg_flag_w.at(i) << std::endl;
+
   }
 
 
@@ -754,18 +840,28 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
     MW.insert(k,k) = 1;
   }
 
+  // std::cout << "U: " << std::endl;
   std::vector<std::pair<double, double> > overlap_u = cal_compact_matrix(MU, RUT, n_2D_u, n_3D_pos,3);
+  // std::cout << "V: " << std::endl;
   std::vector<std::pair<double, double> > overlap_v = cal_compact_matrix(MV, RVT, n_2D_v, n_3D_pos,3); // three wire sharing ...
+  // std::cout << "W: " << std::endl;
   std::vector<std::pair<double, double> > overlap_w = cal_compact_matrix(MW, RWT, n_2D_w, n_3D_pos,2); // two wire sharing  ...
 
-  //  for (size_t i=0;i!=n_3D_pos;i++){
-    //    std::cout << i << " " << reg_flag_u.at(i) << " " << reg_flag_v.at(i) << " " << reg_flag_w.at(i) << std::endl;
-  /*   std::cout << i << " " << (overlap_u.at(i).first + overlap_u.at(i).second)/2. << " " */
-  /* 	      << (overlap_v.at(i).first + overlap_v.at(i).second)/2. << " " */
-  /* 	      << (overlap_w.at(i).first + overlap_w.at(i).second)/2. << " " */
-  /* 	      << MU.coeffRef(i,i) << " " << MV.coeffRef(i,i) << " " << MW.coeffRef(i,i) << std::endl; */
-  //} 
+//   for (size_t i=0;i!=n_3D_pos;i++){
+//         // std::cout << i << " " << reg_flag_u.at(i) << " " << reg_flag_v.at(i) << " " << reg_flag_w.at(i) << std::endl;
+//     std::cout << i << " " << (overlap_u.at(i).first + overlap_u.at(i).second)/2. << " " 
+//   	      << (overlap_v.at(i).first + overlap_v.at(i).second)/2. << " " 
+//   	      << (overlap_w.at(i).first + overlap_w.at(i).second)/2. << " " << std::endl;
+// //  	      << MU.coeffRef(i,i) << " " << MV.coeffRef(i,i) << " " << MW.coeffRef(i,i) << std::endl;
+//   } 
   
+  // { int n_w = 0;
+  //   for (auto it = map_2D_wt_charge.begin(); it!= map_2D_wt_charge.end(); it++){
+     
+  //     std::cout << n_w << " " << it->first.first << " " << it->first.second*4 << " " << MW.coeffRef(n_w,n_w) << " " << std::get<0>(it->second) << " " << std::get<1>(it->second) << std::endl;
+  //     n_w ++;
+  //   }
+  // }
   
   // add regularization ...
   Eigen::SparseMatrix<double> FMatrix(n_3D_pos, n_3D_pos);
@@ -787,44 +883,45 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
     bool flag_w = reg_flag_w.at(i);
     
     if (n_3D_pos!=1){
+      double weight = 0;
       if (i==0){
-	double weight = 0;
-	if (flag_u) weight += dead_ind_weight;
-	if (flag_v) weight += dead_ind_weight;
-	if (flag_w) weight += dead_col_weight;
+        if (flag_u) weight += dead_ind_weight;
+        if (flag_v) weight += dead_ind_weight;
+        if (flag_w) weight += dead_col_weight;
 
-	if (overlap_u.at(i).second > 0.5) weight += close_ind_weight * pow(2*overlap_u.at(i).second-1,2);
-	if (overlap_v.at(i).second > 0.5) weight += close_ind_weight * pow(2*overlap_v.at(i).second-1,2);
-	if (overlap_w.at(i).second > 0.5) weight += close_col_weight * pow(2*overlap_w.at(i).second-1,2);
-	
-	FMatrix.insert(0,0) = -weight/((dx.at(0)+0.001*units::cm)/(0.6*units::cm)); 
-	FMatrix.insert(0,1) = weight/((dx.at(1)+0.001*units::cm)/(0.6*units::cm));
+        if (overlap_u.at(i).second > 0.5) weight += close_ind_weight * pow(2*overlap_u.at(i).second-1,2);
+        if (overlap_v.at(i).second > 0.5) weight += close_ind_weight * pow(2*overlap_v.at(i).second-1,2);
+        if (overlap_w.at(i).second > 0.5) weight += close_col_weight * pow(2*overlap_w.at(i).second-1,2);
+        
+        FMatrix.insert(0,0) = -weight/((dx.at(0)+0.001*units::cm)/(0.6*units::cm)); 
+        FMatrix.insert(0,1) = weight/((dx.at(1)+0.001*units::cm)/(0.6*units::cm));
       }else if (i==n_3D_pos-1){
-	double weight = 0;
-	if (flag_u) weight += dead_ind_weight;
-	if (flag_v) weight += dead_ind_weight;
-	if (flag_w) weight += dead_col_weight;
+        if (flag_u) weight += dead_ind_weight;
+        if (flag_v) weight += dead_ind_weight;
+        if (flag_w) weight += dead_col_weight;
 
-	if (overlap_u.at(i).first > 0.5) weight += close_ind_weight * pow(2*overlap_u.at(i).first-1,2);
-	if (overlap_v.at(i).first > 0.5) weight += close_ind_weight * pow(2*overlap_v.at(i).first-1,2);
-	if (overlap_w.at(i).first > 0.5) weight += close_col_weight * pow(2*overlap_w.at(i).first-1,2);
-	
-	FMatrix.insert(i,i) = -weight/((dx.at(i)+0.001*units::cm)/(0.6*units::cm)); 
-	FMatrix.insert(i,i-1) = weight/((dx.at(i-1)+0.001*units::cm)/(0.6*units::cm));
+        if (overlap_u.at(i).first > 0.5) weight += close_ind_weight * pow(2*overlap_u.at(i).first-1,2);
+        if (overlap_v.at(i).first > 0.5) weight += close_ind_weight * pow(2*overlap_v.at(i).first-1,2);
+        if (overlap_w.at(i).first > 0.5) weight += close_col_weight * pow(2*overlap_w.at(i).first-1,2);
+        
+        FMatrix.insert(i,i) = -weight/((dx.at(i)+0.001*units::cm)/(0.6*units::cm)); 
+        FMatrix.insert(i,i-1) = weight/((dx.at(i-1)+0.001*units::cm)/(0.6*units::cm));
       }else{
-	double weight = 0;
-	if (flag_u) weight += dead_ind_weight;
-	if (flag_v) weight += dead_ind_weight;
-	if (flag_w) weight += dead_col_weight;
+        if (flag_u) weight += dead_ind_weight;
+        if (flag_v) weight += dead_ind_weight;
+        if (flag_w) weight += dead_col_weight;
 
-	if (overlap_u.at(i).first + overlap_u.at(i).second > 1) weight += close_ind_weight * pow(overlap_u.at(i).first + overlap_u.at(i).second - 1,2);
-	if (overlap_v.at(i).first + overlap_v.at(i).second > 1) weight += close_ind_weight * pow(overlap_v.at(i).first + overlap_v.at(i).second - 1,2);
-	if (overlap_w.at(i).first + overlap_w.at(i).second > 1) weight += close_col_weight * pow(overlap_w.at(i).first + overlap_w.at(i).second - 1,2);
-	
-	FMatrix.insert(i,i)=-2.*weight/((dx.at(i)+0.001*units::cm)/(0.6*units::cm)); 
-	FMatrix.insert(i,i+1)=weight/((dx.at(i+1)+0.001*units::cm)/(0.6*units::cm)); 
-	FMatrix.insert(i,i-1)=weight/((dx.at(i-1)+0.001*units::cm)/(0.6*units::cm));
+        if (overlap_u.at(i).first + overlap_u.at(i).second > 1) weight += close_ind_weight * pow(overlap_u.at(i).first + overlap_u.at(i).second - 1,2);
+        if (overlap_v.at(i).first + overlap_v.at(i).second > 1) weight += close_ind_weight * pow(overlap_v.at(i).first + overlap_v.at(i).second - 1,2);
+        if (overlap_w.at(i).first + overlap_w.at(i).second > 1) weight += close_col_weight * pow(overlap_w.at(i).first + overlap_w.at(i).second - 1,2);
+        
+        FMatrix.insert(i,i)=-2.*weight/((dx.at(i)+0.001*units::cm)/(0.6*units::cm)); 
+        FMatrix.insert(i,i+1)=weight/((dx.at(i+1)+0.001*units::cm)/(0.6*units::cm)); 
+        FMatrix.insert(i,i-1)=weight/((dx.at(i-1)+0.001*units::cm)/(0.6*units::cm));
       }
+      // std::cout << i << " " << flag_u << " " << flag_v << " " << flag_w << " " << overlap_u.at(i).first << " | " << overlap_u.at(i).second << " " << overlap_v.at(i).first << " | " << overlap_v.at(i).second << " " << overlap_w.at(i).first << " | " << overlap_w.at(i).second << " " << weight << " " << ((dx.at(i)+0.001*units::cm)/(0.6*units::cm)) << std::endl;
+      // std::cout << i << " " << FMatrix.coeff(i, i) << std::endl;
+
     }
   }
 
@@ -852,33 +949,41 @@ void WCPPID::PR3DCluster::dQ_dx_fit(std::map<int,std::map<const WCP::GeomWire*, 
     pos_3D = solver.solve(b);
   }
 
+
+  //  for (int i = 0; i < b.size(); ++i) {
+  //       // Example: print or process each element of b
+  //       std::cout << "b[" << i << "] = " << b[i] << " " << A.coeff(i,i) << " " << lambda << " " << flag_dQ_dx_fit_reg << std::endl;
+  //       // You can add your processing logic here
+  //   }
     
   double sum = 0 ;
   for (int i=0;i!=n_3D_pos;i++){
     /* std::cout << i << " "<< pos_3D(i) << " " << dx.at(i)/units::cm << " " << pos_3D(i)/dx.at(i)*units::cm << std::endl; */
-    double corr = 1.;
-    if (mp.get_flag_corr()){
-      corr = mp.get_corr_factor(fine_tracking_path.at(i), offset_u,  slope_yu,  slope_zu,  offset_v,  slope_yv,  slope_zv,  offset_w,  slope_yw,  slope_zw);
-    }
+  //   double corr = 1.;
+  //   if (mp.get_flag_corr()){
+  //     corr = mp.get_corr_factor(fine_tracking_path.at(i), offset_u,  slope_yu,  slope_zu,  offset_v,  slope_yv,  slope_zv,  offset_w,  slope_yw,  slope_zw);
+  //   }
     
-    // correction electron lifetime attenuation
-    double elifetime_ratio =  mp.get_attenuation_ratio((fine_tracking_path.at(i).x/time_slice_width * nrebin * 0.5*units::microsecond  - flash_time)/units::millisecond);
-    //    std::cout << fine_tracking_path.at(i).x << " " << (fine_tracking_path.at(i).x/time_slice_width * nrebin * 0.5*units::microsecond  - flash_time)/units::millisecond << " " << elifetime_ratio << std::endl;
+  //   // correction electron lifetime attenuation
+  //   double elifetime_ratio =  mp.get_attenuation_ratio((fine_tracking_path.at(i).x/time_slice_width * nrebin * 0.5*units::microsecond  - flash_time)/units::millisecond);
+  //   //    std::cout << fine_tracking_path.at(i).x << " " << (fine_tracking_path.at(i).x/time_slice_width * nrebin * 0.5*units::microsecond  - flash_time)/units::millisecond << " " << elifetime_ratio << std::endl;
     
-    corr /= elifetime_ratio ; 
+  //   corr /= elifetime_ratio ; 
     
-    double central_U = offset_u + (slope_yu * fine_tracking_path.at(i).y + slope_zu * fine_tracking_path.at(i).z);
-    if (central_U >=296 && central_U <=327 ||
-	central_U >=336 && central_U <=337 ||
-	central_U >=343 && central_U <=351 ||
-	central_U >=376 && central_U <=400 ||
-	central_U >=410 && central_U <=484 ||
-	central_U >=501 && central_U <=524 ||
-	central_U >=536 && central_U <=671)
-      dQ.push_back(pos_3D(i)/0.7*corr);
-    else
-      dQ.push_back(pos_3D(i)*corr);
-    
+  //   double central_U = offset_u + (slope_yu * fine_tracking_path.at(i).y + slope_zu * fine_tracking_path.at(i).z);
+  //   if (central_U >=296 && central_U <=327 ||
+	// central_U >=336 && central_U <=337 ||
+	// central_U >=343 && central_U <=351 ||
+	// central_U >=376 && central_U <=400 ||
+	// central_U >=410 && central_U <=484 ||
+	// central_U >=501 && central_U <=524 ||
+	// central_U >=536 && central_U <=671)
+  //     dQ.push_back(pos_3D(i)/0.7*corr);
+  //   else
+  //     dQ.push_back(pos_3D(i)*corr);
+  
+    dQ.push_back(pos_3D(i));
+
     sum += dQ.back();
   }
   //  std::cout << "Cluster: " << cluster_id << " " << "total: " << sum << std::endl;
