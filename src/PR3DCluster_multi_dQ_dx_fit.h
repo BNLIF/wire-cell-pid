@@ -234,7 +234,12 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       std::vector<double> sigmas_W;
       std::vector<double> weights;
 
+      // std::cout << curr_rec_pos.x/units::cm << " " << curr_rec_pos.y/units::cm << " " << curr_rec_pos.z/units::cm << " " << prev_rec_pos.x/units::cm << " " << prev_rec_pos.y/units::cm << " " << prev_rec_pos.z/units::cm << " " << next_rec_pos.x/units::cm << " " << next_rec_pos.y/units::cm << " " << next_rec_pos.z/units::cm << std::endl;
+
       for (int j=0;j!=5;j++){
+
+        
+
       	Point reco_pos;
       	reco_pos.x = prev_rec_pos.x + (curr_rec_pos.x-prev_rec_pos.x)/5.*(j+0.5);
       	reco_pos.y = prev_rec_pos.y + (curr_rec_pos.y-prev_rec_pos.y)/5.*(j+0.5);
@@ -306,6 +311,60 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       	sigmas_T.push_back(sigma_L);
       }
 
+    // std::cout << i1 << " U ";
+    //  for (size_t idx = 0; idx < centers_U.size(); ++idx) {
+    //         std::cout << centers_U[idx] << " ";
+    //   }
+    //   std::cout << std::endl;
+
+    //   std::cout << i1 << " V ";
+    //     for (size_t idx = 0; idx < centers_V.size(); ++idx) {
+    //         std::cout << centers_V[idx]-2400 << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i1 << " W ";
+    //     for (size_t idx = 0; idx < centers_W.size(); ++idx) {
+    //         std::cout << centers_W[idx]-4800 << " ";
+    //     }
+    //     std::cout << std::endl;
+
+    //     std::cout << i1 << " T ";
+    //     for (size_t idx = 0; idx < centers_T.size(); ++idx) {
+    //         std::cout << centers_T[idx]*4 << " ";
+    //     }
+    //     std::cout << std::endl;
+
+        // std::cout << i1 << " Weights ";
+        // for (size_t idx = 0; idx < weights.size(); ++idx) {
+        //     std::cout << weights[idx] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // std::cout <<i1 << " SU ";
+        // for (size_t idx = 0; idx < sigmas_U.size(); ++idx) {
+        //     std::cout << sigmas_U[idx] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // std::cout << i1 << " SV ";
+        // for (size_t idx = 0; idx < sigmas_V.size(); ++idx) {
+        //     std::cout << sigmas_V[idx] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // std::cout << i1 << " SW ";
+        // for (size_t idx = 0; idx < sigmas_W.size(); ++idx) {
+        //     std::cout << sigmas_W[idx] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // std::cout << i1 << " ST ";
+        // for (size_t idx = 0; idx < sigmas_T.size(); ++idx) {
+        //     std::cout << sigmas_T[idx] << " ";
+        // }
+        // std::cout << std::endl;
+
       int n_u = 0;
       double sum_u = 0;
       for (auto it = map_2D_ut_charge.begin(); it!= map_2D_ut_charge.end(); it++){
@@ -318,6 +377,8 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       	    // if (i!=143)
       	    RU.insert(n_u,indices.at(i1)) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2));
       	    // if (i==143) std::cout << "U: " << it->first.first << " " << it->first.second << " " << value << std::endl;
+
+            // std::cout << n_u << " " << i1 << " " << it->first.second*4 << " " << it->first.first << " " << i1 << " " << value / sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2)) << std::endl;
       	  }
       	}
       	n_u ++;
@@ -389,7 +450,10 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       	  }
       	}
       }
-      
+
+      // std::cout << indices.at(i1) << " " << reg_flag_u.at(indices.at(i1)) << " " << reg_flag_v.at(indices.at(i1)) << " " << reg_flag_w.at(indices.at(i1)) << std::endl;
+
+
     } // loop over points ...
   } // loop over segments ...
   
@@ -405,26 +469,26 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
     for (auto it1 = it->second.begin(); it1!=it->second.end(); it1++){
       WCPPID::ProtoSegment *sg = *it1;
       if ( vtx->get_wcpt().index == sg->get_wcpt_vec().front().index){
-	Point p;
-	p.x = (curr_rec_pos.x + sg->get_point_vec().at(1).x)/2.;
-	p.y = (curr_rec_pos.y + sg->get_point_vec().at(1).y)/2.;
-	p.z = (curr_rec_pos.z + sg->get_point_vec().at(1).z)/2.;
-	connected_pts.push_back(p);
+        Point p;
+        p.x = (curr_rec_pos.x + sg->get_point_vec().at(1).x)/2.;
+        p.y = (curr_rec_pos.y + sg->get_point_vec().at(1).y)/2.;
+        p.z = (curr_rec_pos.z + sg->get_point_vec().at(1).z)/2.;
+        connected_pts.push_back(p);
       }else if (vtx->get_wcpt().index == sg->get_wcpt_vec().back().index){
-	Point p;
-	p.x = (curr_rec_pos.x + sg->get_point_vec().at(sg->get_point_vec().size()-2).x)/2.;
-	p.y = (curr_rec_pos.y + sg->get_point_vec().at(sg->get_point_vec().size()-2).y)/2.;
-	p.z = (curr_rec_pos.z + sg->get_point_vec().at(sg->get_point_vec().size()-2).z)/2.;
-	connected_pts.push_back(p);
+        Point p;
+        p.x = (curr_rec_pos.x + sg->get_point_vec().at(sg->get_point_vec().size()-2).x)/2.;
+        p.y = (curr_rec_pos.y + sg->get_point_vec().at(sg->get_point_vec().size()-2).y)/2.;
+        p.z = (curr_rec_pos.z + sg->get_point_vec().at(sg->get_point_vec().size()-2).z)/2.;
+        connected_pts.push_back(p);
       }
     }
     if (connected_pts.size()==1){
       double length = sqrt(pow(connected_pts.at(0).x - curr_rec_pos.x,2) + pow(connected_pts.at(0).y - curr_rec_pos.y,2) + pow(connected_pts.at(0).z - curr_rec_pos.z,2));
       Point p = curr_rec_pos;
       if (length>0){
-	p.x = curr_rec_pos.x - (connected_pts.at(0).x - curr_rec_pos.x)/length * dis_end_point_ext;
-	p.y = curr_rec_pos.y - (connected_pts.at(0).y - curr_rec_pos.y)/length * dis_end_point_ext;
-	p.z = curr_rec_pos.z - (connected_pts.at(0).z - curr_rec_pos.z)/length * dis_end_point_ext;
+        p.x = curr_rec_pos.x - (connected_pts.at(0).x - curr_rec_pos.x)/length * dis_end_point_ext;
+        p.y = curr_rec_pos.y - (connected_pts.at(0).y - curr_rec_pos.y)/length * dis_end_point_ext;
+        p.z = curr_rec_pos.z - (connected_pts.at(0).z - curr_rec_pos.z)/length * dis_end_point_ext;
       }
       connected_pts.push_back(p);
       // std::cout << length << std::endl;
@@ -442,9 +506,9 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       double user_dx = 0;
 
       for (size_t i=0;i!=connected_pts.size();i++){
-	double dx_after_corr = mp.func_dx_after_Pos_Efield_SCE_correction( connected_pts.at(i).x/units::cm, connected_pts.at(i).y/units::cm, connected_pts.at(i).z/units::cm, 
-									   curr_rec_pos.x/units::cm, curr_rec_pos.y/units::cm, curr_rec_pos.z/units::cm);
-	user_dx += dx_after_corr*units::cm;
+        double dx_after_corr = mp.func_dx_after_Pos_Efield_SCE_correction( connected_pts.at(i).x/units::cm, connected_pts.at(i).y/units::cm, connected_pts.at(i).z/units::cm, 
+                          curr_rec_pos.x/units::cm, curr_rec_pos.y/units::cm, curr_rec_pos.z/units::cm);
+        user_dx += dx_after_corr*units::cm;
       }
       
       tmp_dx = user_dx;
@@ -482,6 +546,9 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
     //    std::cout << vtx->get_id() << " " << connected_pts.size() << " " << map_vertex_segments[vtx].size() << std::endl;
     
     for (int k=0;k!=connected_pts.size();k++){
+
+      // std::cout << k << " " << curr_rec_pos.x/units::cm << " " << curr_rec_pos.y/units::cm << " " << curr_rec_pos.z/units::cm << " " << connected_pts.at(k).x/units::cm << " " << connected_pts.at(k).y/units::cm << " " << connected_pts.at(k).z/units::cm << std::endl;
+
       for (int j=0;j!=5;j++){
 	Point reco_pos;
 	reco_pos.x = connected_pts.at(k).x + (curr_rec_pos.x - connected_pts.at(k).x)/5.*(j+0.5);
@@ -519,6 +586,12 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
 	sigmas_T.push_back(sigma_L);
       }
     }
+
+    //    std::cout << " U ";
+    //  for (size_t idx = 0; idx < centers_U.size(); ++idx) {
+    //         std::cout << centers_U[idx] << " ";
+    //   }
+    //   std::cout << std::endl;
     
     int n_u = 0;
     double sum_u = 0;
@@ -533,7 +606,8 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
 	  // if (i!=143)
 	  RU.insert(n_u,index) = value/sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2));
 	  // if (i==143) std::cout << "U: " << it->first.first << " " << it->first.second << " " << value << std::endl;
-	}
+    // std::cout << "U: " << n_u << " " << index << " " << it->first.second*4 << " " << it->first.first << " " << index << " " << value / sqrt(pow(std::get<1>(it->second),2)+pow(std::get<0>(it->second)*rel_uncer_ind,2) + pow(add_uncer_ind,2)) << std::endl;
+  }
       }
       n_u ++;
     }
@@ -608,6 +682,7 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
       }
     }
     
+    // std::cout << index << " " << reg_flag_u.at(index) << " " << reg_flag_v.at(index) << " " << reg_flag_w.at(index) << std::endl;
   }
 
   Eigen::SparseMatrix<double> RUT = Eigen::SparseMatrix<double>(RU.transpose());
@@ -661,9 +736,9 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
   std::vector<std::vector<double> > overlap_w = cal_compact_matrix_multi(connected_vec, MW, RWT, n_2D_w, n_3D_pos,2); // two wire sharing  ...
 
 
-  /* for(size_t i=0;i!=connected_vec.size();i++){ */
-  /*   std::cout << i << " " << connected_vec.at(i).size() << " " << overlap_u.at(i).size() << " " << overlap_v.at(i).size() << " " << overlap_w.at(i).size() << std::endl; */
-  /* } */
+  // for(size_t i=0;i!=connected_vec.size();i++){ 
+  //   std::cout << i << " " << connected_vec.at(i).size() << " " << overlap_u.at(i).size() << " " << overlap_v.at(i).size() << " " << overlap_w.at(i).size() << std::endl;
+  // }
 
   for (auto it = map_segment_vertices.begin(); it != map_segment_vertices.end(); it++){
     if (it->first->get_cluster_id() != cluster_id) continue;

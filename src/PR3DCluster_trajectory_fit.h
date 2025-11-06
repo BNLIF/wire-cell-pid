@@ -1221,7 +1221,8 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
     if (cloud.pts.size()>0){
       WCP::WCPointCloud<double>::WCPoint wcp = point_cloud->get_closest_wcpoint(p);
       double temp_dis = sqrt(pow(wcp.x-p.x,2)+pow(wcp.y-p.y,2)+pow(wcp.z-p.z,2));
-      
+
+      // std::cout << "Closest: " << wcp.x << " " << wcp.y << " " << wcp.z << " " << p.x << " " << p.y << " " << p.z  << " " << temp_dis/units::cm << std::endl;
       //std::cout << temp_dis/units::cm << " " << dis_cut/units::cm << std::endl;
       if (temp_dis < dis_cut){
 	std::set<int> total_vertices_found;
@@ -1406,6 +1407,7 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
       // std::cout << "Steiner graph: vertices = " << boost::num_vertices(*graph_steiner)
       //       << ", edges = " << boost::num_edges(*graph_steiner) << std::endl;
       // std::cout << "Steiner: " << temp_dis << " " << dis_cut << " " << p.x << " " << p.y << " " << p.z << " " << wcp.x << " " << wcp.y << " " << wcp.z << std::endl;
+
       if (temp_dis < dis_cut){
         std::set<int> total_vertices_found;
         std::set<int> vertices_to_be_examined;
@@ -1565,6 +1567,8 @@ void WCPPID::PR3DCluster::form_point_association(WCP::Point &p, std::set<std::pa
 	    float range_v = rem_dis_cut_v*coef1 - pow(min_u_dis*pitch_u,2) - coef2*pow(min_w_dis*pitch_w,2);
 	    float range_w = (rem_dis_cut_w*coef1 - pow(min_u_dis*pitch_u,2) - pow(min_v_dis*pitch_v,2))/coef2;
 	    
+      // std::cout << this_time_slice*4 << " " << min_u_dis << " " << min_v_dis << " " << min_w_dis << " "<< range_u << " " << range_v << " " << range_w << std::endl;
+
 	    if ( range_u > 0 && range_v >0 && range_w > 0){
 	      float low_u_limit = cur_wire_u - sqrt(range_u)/pitch_u;
 	      float high_u_limit = cur_wire_u + sqrt(range_u)/pitch_u;

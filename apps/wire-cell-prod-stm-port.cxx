@@ -249,6 +249,7 @@ int main(int argc, char* argv[])
 
     std::cout << "Electron Lifetime Read in: " << elifetime << " ms" << std::endl;
   }
+  mp.init_PID_dq_dx();   // default
 
   
   std::map<int,std::pair<double,double>> dead_u_index;
@@ -966,112 +967,361 @@ int main(int argc, char* argv[])
         }
       }
       
-      // // holder ...
-      // if (main_cluster->get_point_cloud_steiner()!=0){
-      // 	if (main_cluster->get_point_cloud_steiner()->get_num_points() >= 2){
-      // 	  std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = main_cluster->get_two_boundary_wcps(2); 
-      //     std::cout << "End Points: " << wcps.first.x << " " << wcps.first.y << " " << wcps.first.z << " | " << wcps.second.x << " " << wcps.second.y << " " << wcps.second.z << std::endl;
-      //     // // hack end points ...
-      //     // wcps.second.x = 215.532;
-      //     // wcps.second.y =  -95.1674;
-      //     // wcps.second.z =  211.193;
+      // holder ...
+      if (main_cluster->get_point_cloud_steiner()!=0){
+      	if (main_cluster->get_point_cloud_steiner()->get_num_points() >= 2){
+      	  std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = main_cluster->get_two_boundary_wcps(2); 
+          std::cout << "End Points: " << wcps.first.x << " " << wcps.first.y << " " << wcps.first.z << " | " << wcps.second.x << " " << wcps.second.y << " " << wcps.second.z << std::endl;
+          // // hack end points ...
+          // wcps.second.x = 215.532;
+          // wcps.second.y =  -95.1674;
+          // wcps.second.z =  211.193;
 
-      // 	  //main_cluster->dijkstra_shortest_paths(wcps.first,2); 
-      // 	  //main_cluster->cal_shortest_path(wcps.second,2);
-      //     main_cluster->do_rough_path(wcps.first, wcps.second);
-      //     std::cout << main_cluster->get_path_wcps().size() << " points on the main path " << std::endl;
-      //     // for (const auto& wcp : main_cluster->get_path_wcps()) {
-      //     //   std::cout << "Path point: x=" << wcp.x << " y=" << wcp.y << " z=" << wcp.z << std::endl;
-      //     // }
+      	  //main_cluster->dijkstra_shortest_paths(wcps.first,2); 
+      	  //main_cluster->cal_shortest_path(wcps.second,2);
+          main_cluster->do_rough_path(wcps.first, wcps.second);
+          std::cout << main_cluster->get_path_wcps().size() << " points on the main path " << std::endl;
+          // for (const auto& wcp : main_cluster->get_path_wcps()) {
+          //   std::cout << "Path point: x=" << wcp.x << " y=" << wcp.y << " z=" << wcp.z << std::endl;
+          // }
 
-      //     // // Create ToyPointCloud and insert all path_wcps into it
-      //     // ToyPointCloud* segment = new ToyPointCloud();
-      //     // for (const auto& wcp : main_cluster->get_path_wcps()) {
-      //     //   WCPointCloud<double>::WCPoint temp_wcp = wcp;
-      //     //   segment->AddPoint(temp_wcp);
-      //     // }
-      //     // segment->build_kdtree_index();
+          // // Create ToyPointCloud and insert all path_wcps into it
+          // ToyPointCloud* segment = new ToyPointCloud();
+          // for (const auto& wcp : main_cluster->get_path_wcps()) {
+          //   WCPointCloud<double>::WCPoint temp_wcp = wcp;
+          //   segment->AddPoint(temp_wcp);
+          // }
+          // segment->build_kdtree_index();
           
-      //     // // Test functionality similar to the requested example
-      //     // WCP::Point test_p(10, 10, 10);
+          // // Test functionality similar to the requested example
+          // WCP::Point test_p(10, 10, 10);
           
-      //     // if (segment->get_num_points() > 0) {
-      //     //   // Get closest point using available methods
-      //     //   auto closest_result = segment->get_closest_point(test_p);
-      //     //   double closest_3d_distance = closest_result.first;
+          // if (segment->get_num_points() > 0) {
+          //   // Get closest point using available methods
+          //   auto closest_result = segment->get_closest_point(test_p);
+          //   double closest_3d_distance = closest_result.first;
             
-      //     //   // Get closest 2D distances for each plane
-      //     //   auto closest_2d_u = segment->get_closest_2d_dis(test_p, 0);
-      //     //   auto closest_2d_v = segment->get_closest_2d_dis(test_p, 1);
-      //     //   auto closest_2d_w = segment->get_closest_2d_dis(test_p, 2);
+          //   // Get closest 2D distances for each plane
+          //   auto closest_2d_u = segment->get_closest_2d_dis(test_p, 0);
+          //   auto closest_2d_v = segment->get_closest_2d_dis(test_p, 1);
+          //   auto closest_2d_w = segment->get_closest_2d_dis(test_p, 2);
             
-      //     //   std::cout << "Test point analysis: 3D distance=" << closest_3d_distance/units::cm 
-      //     //             << " U plane distance=" << closest_2d_u.second/units::cm
-      //     //             << " V plane distance=" << closest_2d_v.second/units::cm
-      //     //             << " W plane distance=" << closest_2d_w.second/units::cm << std::endl;
+          //   std::cout << "Test point analysis: 3D distance=" << closest_3d_distance/units::cm 
+          //             << " U plane distance=" << closest_2d_u.second/units::cm
+          //             << " V plane distance=" << closest_2d_v.second/units::cm
+          //             << " W plane distance=" << closest_2d_w.second/units::cm << std::endl;
             
-      //     //   std::cout << closest_2d_u.first << " " << closest_2d_v.first << " " << closest_2d_w.first << std::endl;
-      //     // }
+          //   std::cout << closest_2d_u.first << " " << closest_2d_v.first << " " << closest_2d_w.first << std::endl;
+          // }
           
-      //     // delete segment;
+          // delete segment;
 
-      // 	}
-      // // 	if (main_cluster->get_path_wcps().size()>=2){
-      // //     int ncount = 0;
-      // //     for (const auto& wc_map_entry : global_wc_map) {
-      // //       ncount += wc_map_entry.second.size();
-      // //     }
+      	}
+      	if (main_cluster->get_path_wcps().size()>=2){
+          int ncount = 0;
+          for (const auto& wc_map_entry : global_wc_map) {
+            ncount += wc_map_entry.second.size();
+          }
 
-      // //     std::cout << main_cluster->get_path_wcps().size() << " " << main_cluster->get_num_mcells() << " " << ncount << std::endl;
+          std::cout << main_cluster->get_path_wcps().size() << " " << main_cluster->get_num_mcells() << " " << ncount << std::endl;
 
-      // // 	  main_cluster->collect_charge_trajectory(ct_point_cloud);
+      	  main_cluster->collect_charge_trajectory(ct_point_cloud);
 
-      // //     // std::cout << " " << " " << global_wc_map.size() << " " << flash_time << std::endl;
+          // std::cout << " " << " " << global_wc_map.size() << " " << flash_time << std::endl;
 
-      // // 	  main_cluster->do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+      	  main_cluster->do_tracking(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
       	
-      // //     {        
-      // //       // Print fitted points with dQ and dx
-      // //       PointVector& fitted_points = main_cluster->get_fine_tracking_path();
-      // //       std::vector<double>& dQ = main_cluster->get_dQ();
-      // //       std::vector<double>& dx = main_cluster->get_dx();
+          {        
+            // Print fitted points with dQ and dx
+            PointVector& fitted_points = main_cluster->get_fine_tracking_path();
+            std::vector<double>& dQ = main_cluster->get_dQ();
+            std::vector<double>& dx = main_cluster->get_dx();
             
-      // //       for (size_t point_idx = 0; point_idx < fitted_points.size(); point_idx++) {
-      // //         double dq_val = (point_idx < dQ.size()) ? dQ.at(point_idx) : 0.0;
-      // //         double dx_val = (point_idx < dx.size()) ? dx.at(point_idx) : 0.0;
-      // //         std::cout << "Point " << point_idx << ": position=(" 
-      // //                   << fitted_points.at(point_idx).x/units::cm << ", " 
-      // //                   << fitted_points.at(point_idx).y/units::cm << ", " 
-      // //                   << fitted_points.at(point_idx).z/units::cm 
-      // //                   << "), dQ=" << dq_val << ", dx=" << dx_val/units::cm << std::endl;
-      // //       }
-      // //     }
-      // //     std::cout << "After Search other tracks" << std::endl;
-      // //     main_cluster->clear_fit_tracks();
-      // //   	main_cluster->search_other_tracks(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
-      // //     bool flag_other_tracks = fid->check_other_tracks(main_cluster, offset_x);
-      // //     std::cout << 	"Check Other Tracks: " << flag_other_tracks << std::endl;
-      // //     bool flag_other_clusters = fid->check_other_clusters(main_cluster, additional_clusters);
-      // //     std::cout << 	"Check Other Clusters: " << flag_other_clusters << std::endl;
+            for (size_t point_idx = 0; point_idx < fitted_points.size(); point_idx++) {
+              double dq_val = (point_idx < dQ.size()) ? dQ.at(point_idx) : 0.0;
+              double dx_val = (point_idx < dx.size()) ? dx.at(point_idx) : 0.0;
+              // std::cout << "Point " << point_idx << ": position=(" 
+              //           << fitted_points.at(point_idx).x/units::cm << ", " 
+              //           << fitted_points.at(point_idx).y/units::cm << ", " 
+              //           << fitted_points.at(point_idx).z/units::cm 
+              //           << "), dQ=" << dq_val << ", dx=" << dx_val/units::cm << std::endl;
+            }
+            std::cout << "main_cluster->get_path_wcps() content:" << std::endl;
+            for (const auto& wcp : main_cluster->get_path_wcps()) {
+              std::cout << "  x=" << wcp.x/units::cm
+                    << " y=" << wcp.y/units::cm
+                    << " z=" << wcp.z/units::cm
+                    << " index=" << wcp.index
+                    << std::endl;
+            }
+          }
 
-      // //     Point mid_p = main_cluster->adjust_rough_path(); 
-      // //     std::cout << "Adjust path " << mid_p << std::endl;
 
-      // //     int kink_num = fid->find_first_kink(main_cluster);
-      // //     std::cout << "Kink :" << kink_num << std::endl;
 
-      // //     bool flag_proton = fid->detect_proton(main_cluster, kink_num);
-      // //     std::cout << "Proton " << flag_proton << std::endl;
+           // Create a ProtoSegment from the existing single-track fitting results
+          // After check_stm has called do_tracking, we can use the fitted data
+          if (main_cluster->get_fine_tracking_path().size() > 0) {
+            std::cout << "\n=== Creating ProtoSegment from single-track fitting ===" << std::endl;
+            
+            // Get the path_wcps (WCPoints from the cluster)
+            std::list<WCP::WCPointCloud<double>::WCPoint>& path_wcps = main_cluster->get_path_wcps();
+            
+            // Create a ProtoSegment with id=1 and cluster_id from main_cluster
+            int segment_id = 1;
+            int cluster_id = main_cluster->get_cluster_id();
+            WCPPID::ProtoSegment* test_segment = new WCPPID::ProtoSegment(segment_id, path_wcps, cluster_id);
+            
+            // Get the fitted trajectory data from the cluster
+            WCP::PointVector& fine_tracking_path = main_cluster->get_fine_tracking_path();
+            std::vector<double>& dQ = main_cluster->get_dQ();
+            std::vector<double>& dx = main_cluster->get_dx();
+            std::vector<double>& pu = main_cluster->get_pu();
+            std::vector<double>& pv = main_cluster->get_pv();
+            std::vector<double>& pw = main_cluster->get_pw();
+            std::vector<double>& pt = main_cluster->get_pt();
+            std::vector<double>& reduced_chi2 = main_cluster->get_reduced_chi2();
+            
+            // Set the fitted data in the ProtoSegment
+            test_segment->set_fit_vec(fine_tracking_path, dQ, dx, pu, pv, pw, pt, reduced_chi2);
+            
+            std::cout << "ProtoSegment created with:" << std::endl;
+            std::cout << "  Segment ID: " << test_segment->get_id() << std::endl;
+            std::cout << "  Cluster ID: " << test_segment->get_cluster_id() << std::endl;
+            std::cout << "  Number of fitted points: " << test_segment->get_point_vec().size() << std::endl;
+            std::cout << "  Segment length: " << test_segment->get_length()/units::cm << " cm" << std::endl;
+            std::cout << "  Direct length: " << test_segment->get_direct_length()/units::cm << " cm" << std::endl;
+            std::cout << "  Medium dQ/dx: " << test_segment->get_medium_dQ_dx() << std::endl;
+            
+            // Now you can test various ProtoSegment functions
+            // For example:
+            
+            // Test build_pcloud_fit
+            test_segment->build_pcloud_fit();
+            WCP::ToyPointCloud* fit_pcloud = test_segment->get_fit_pcloud();
+            if (fit_pcloud) {
+              std::cout << "  Fit point cloud has " << fit_pcloud->get_num_points() << " points" << std::endl;
+            }
 
-      // //     bool flag_eval_stm = fid->eval_stm(main_cluster, kink_num, 5*units::cm, 0., 35*units::cm, true);
-      // //     std::cout << "eval_stm " << flag_eval_stm << std::endl;
-      // //   }
-      // }
+            std::cout << "Direct Length: " << test_segment->get_direct_length()/units::cm << " cm" << " " << test_segment->get_direct_length(0,10)/units::cm << " cm" << " " << test_segment->get_direct_length(0,200,TVector3(1,0,0))/units::cm << " cm" << std::endl;
+            std::cout << "Segment Length: " << test_segment->get_length()/units::cm << " cm" << " " << test_segment->get_length(0,10)/units::cm << " cm" << " " << test_segment->get_length(0,200,TVector3(1,0,0))/units::cm << " cm" << std::endl;
+            std::cout << "Max Deviation: " << test_segment->get_max_deviation(0,100)/units::cm << " cm; " << test_segment->get_max_deviation(0,10)/units::cm << " cm" << std::endl;
+            std::cout << "dQ_dx: " << test_segment->get_rms_dQ_dx() << " " << test_segment->get_medium_dQ_dx() << " " << test_segment->get_medium_dQ_dx(0,10) << std::endl;
+            auto kink_results = test_segment->search_kink(fine_tracking_path.front());
+            WCP::Point kink_point = std::get<0>(kink_results);
+            TVector3 kink_dir1 = std::get<1>(kink_results);
+            TVector3 kink_dir2 = std::get<2>(kink_results);
+            bool kink_found = std::get<3>(kink_results);
+            std::cout << "Kink search: Point(" << kink_point.x/units::cm << "," << kink_point.y/units::cm << "," << kink_point.z/units::cm << ") cm"
+                      << " Dir1(" << kink_dir1.X() << "," << kink_dir1.Y() << "," << kink_dir1.Z() << ")"
+                      << " Dir2(" << kink_dir2.X() << "," << kink_dir2.Y() << "," << kink_dir2.Z() << ")"
+                      << " Found=" << kink_found << std::endl;
+            std::cout << "Shower Trajectory: " << test_segment->is_shower_trajectory() << std::endl;
+            test_segment->set_flag_dir(1);
+            TVector3 seg_dir_1 = test_segment->cal_dir_3vector();
+            TVector3 seg_dir_2 = test_segment->cal_dir_3vector(fine_tracking_path.back(), 10*units::cm);
+            TVector3 seg_dir_3 = test_segment->cal_dir_3vector(-1,20, 1);
+            std::cout << "3D Vector: (" << seg_dir_1.X() << " " << seg_dir_1.Y() << " " << seg_dir_1.Z() << ") (" << seg_dir_2.X() << " " << seg_dir_2.Y() << " " << seg_dir_2.Z() << ") (" << seg_dir_3.X() << " " << seg_dir_3.Y() << " " << seg_dir_3.Z() << ")" << std::endl;
+
+            std::vector<double> L, dQ_dx;
+            {
+              std::cout << "ProtoSegment fit dQ and dx (dx in cm):" << std::endl;
+              size_t n = std::min({ fine_tracking_path.size(), dQ.size(), dx.size() });
+              for (size_t i = 0; i < n; ++i) {
+                // std::cout << "  idx " << i
+                //           << "  dQ = " << dQ.at(i)
+                //           << "  dx = " << dx.at(i) / units::cm << " cm"
+                //           << std::endl;
+                if (i==0){
+                  L.push_back(0.);
+                }else{
+                  L.push_back(L.back() + dx.at(i));
+                }
+                dQ_dx.push_back(dQ.at(i)/dx.at(i)*units::cm); // convert to per cm
+              }
+            }
+            std::cout <<"Kine dQdx: " << test_segment->cal_kine_dQdx() << " " << test_segment->cal_kine_dQdx(dQ, dx) << " " << test_segment->cal_kine_range(13) << std::endl;
+            auto pid_results = test_segment->do_track_comp(L, dQ_dx, 35*units::cm, 0*units::cm);
+            std::cout << "Particle ID results:" << pid_results.at(0) << " " << pid_results.at(1) << " " << pid_results.at(2) << " " << pid_results.at(3) << " " << std::endl;
+            bool pid_success = test_segment->do_track_pid(L, dQ_dx) ;
+            std::cout << pid_success << " " << test_segment->get_flag_dir() << " " << test_segment->get_particle_type() << " " << test_segment->get_particle_score() << std::endl;
+
+            // Test particle identification methods
+            test_segment->set_flag_dir(1);
+            test_segment->cal_4mom();
+            std::cout << "  Particle 4-momentum: (" 
+                      << test_segment->get_particle_4mom(0) << ", "
+                      << test_segment->get_particle_4mom(1) << ", "
+                      << test_segment->get_particle_4mom(2) << ", "
+                      << test_segment->get_particle_4mom(3) << ")" << std::endl;
+
+            test_segment->determine_dir_track(1,1,true);
+            test_segment->determine_dir_shower_trajectory(1,1,true);
+
+            WCPPID::Map_Proto_Vertex_Segments map_vertex_segments;
+            WCPPID::Map_Proto_Segment_Vertices map_segment_vertices;
+
+            WCPPID::ProtoVertex* v1 = new WCPPID::ProtoVertex(1, path_wcps.front(), main_cluster->get_cluster_id());
+            WCPPID::ProtoVertex* v2 = new WCPPID::ProtoVertex(2, path_wcps.back(), main_cluster->get_cluster_id());
+            map_vertex_segments[v1].insert(test_segment);
+            map_vertex_segments[v2].insert(test_segment);
+            map_segment_vertices[test_segment].insert(v1);
+            map_segment_vertices[test_segment].insert(v2);
+
+            main_cluster->clustering_points_master(map_vertex_segments, map_segment_vertices, ct_point_cloud);
+
+            {
+              std::map<int, WCPPID::ProtoSegment*> map_id_seg;
+              std::map<WCPPID::ProtoSegment*, int> map_seg_id;
+              for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
+                WCPPID::ProtoSegment *sg = it->first;
+                if (sg->get_cluster_id() != main_cluster->get_cluster_id()) continue;
+                map_id_seg[sg->get_id()] = sg;
+                map_seg_id[sg] = sg->get_id();
+                // std::cout << "A: " << sg->get_id() << std::endl;
+                sg->reset_associate_points();
+              }
+
+              {
+                // find the relevant point clouds ...
+                WCP::WCPointCloud<double>& cloud = main_cluster->get_point_cloud()->get_cloud();
+                WCP::WC2DPointCloud<double>& cloud_u = main_cluster->get_point_cloud()->get_cloud_u();
+                WCP::WC2DPointCloud<double>& cloud_v = main_cluster->get_point_cloud()->get_cloud_v();
+                WCP::WC2DPointCloud<double>& cloud_w = main_cluster->get_point_cloud()->get_cloud_w();
+
+                std::vector<int>& point_sub_cluster_ids = main_cluster->get_point_sub_cluster_ids();
+
+                
+                for (size_t i=0;i!=point_sub_cluster_ids.size();i++){
+                  //      std::cout << point_sub_cluster_ids.at(i) << std::endl;
+                  if (point_sub_cluster_ids.at(i) == -1) continue;
+                  if (map_id_seg.find(point_sub_cluster_ids.at(i))==map_id_seg.end()) continue;
+                  map_id_seg[point_sub_cluster_ids.at(i)]->add_associate_point(cloud.pts[i], cloud_u.pts[i], cloud_v.pts[i], cloud_w.pts[i]);
+                }
+              }
+
+              {
+                WCP::WCPointCloud<double>& cloud = main_cluster->get_point_cloud_steiner()->get_cloud();
+                std::vector<int>& point_steiner_sub_cluster_ids = main_cluster->get_point_steiner_sub_cluster_ids();
+                for (size_t i=0;i!=point_steiner_sub_cluster_ids.size();i++){
+                  if (point_steiner_sub_cluster_ids.at(i) == -1) continue;
+                  if (map_id_seg.find(point_steiner_sub_cluster_ids.at(i))==map_id_seg.end()) continue;
+                  map_id_seg[point_steiner_sub_cluster_ids.at(i)]->add_associate_point_steiner(cloud.pts[i]);
+                }
+              }
+              
+
+              // build kdtree
+              for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
+                WCPPID::ProtoSegment *sg = it->first;
+                if (sg->get_cluster_id() != main_cluster->get_cluster_id()) continue;
+                ToyPointCloud *pcloud_associate = sg->get_associated_pcloud();
+                if (pcloud_associate !=0) pcloud_associate->build_kdtree_index();
+                ToyPointCloud *pcloud_associate_steiner = sg->get_associated_pcloud_steiner();
+                if (pcloud_associate_steiner !=0) pcloud_associate_steiner->build_kdtree_index();
+              }
+            }
+
+            std::cout << "Associate PCloud: " << test_segment->get_associated_pcloud()->get_num_points() << " points " << " " << main_cluster->get_num_points() << std::endl;
+            std::cout << test_segment->is_shower_topology() << " " << test_segment->determine_shower_direction() << std::endl;
+
+            Point break_p(215.7*units::cm, -94.9437*units::cm, 211.109*units::cm);
+            int acc_segment_id = test_segment->get_id();
+            int acc_vertex_id = v2->get_id();
+            auto break_results = test_segment->break_segment_at_point(break_p, acc_segment_id, acc_vertex_id);
+            std::pair<WCPPID::ProtoVertex*, WCPPID::ProtoVertex*> original_vertices = std::make_pair(v1, v2);
+            std::cout << map_segment_vertices.size() << " " << map_vertex_segments.size() << std::endl;
+            map_segment_vertices.clear();
+            map_vertex_segments.clear();
+            map_segment_vertices[std::get<0>(break_results)].insert(std::get<1>(break_results));
+            map_segment_vertices[std::get<2>(break_results)].insert(std::get<1>(break_results));
+            map_vertex_segments[std::get<1>(break_results)].insert(std::get<0>(break_results));
+            map_vertex_segments[std::get<1>(break_results)].insert(std::get<2>(break_results));
+            if (original_vertices.first->get_wcpt().index == std::get<0>(break_results)->get_wcpt_vec().front().index) {
+              map_segment_vertices[std::get<0>(break_results)].insert(original_vertices.first);
+              map_vertex_segments[original_vertices.first].insert(std::get<0>(break_results));
+              map_segment_vertices[std::get<2>(break_results)].insert(original_vertices.second);
+              map_vertex_segments[original_vertices.second].insert(std::get<2>(break_results));
+            }else{              
+              map_segment_vertices[std::get<0>(break_results)].insert(original_vertices.second);
+              map_vertex_segments[original_vertices.second].insert(std::get<0>(break_results));
+              map_segment_vertices[std::get<2>(break_results)].insert(original_vertices.first);
+              map_vertex_segments[original_vertices.first].insert(std::get<2>(break_results));
+            }
+            std::cout << "After Break: " << map_segment_vertices.size() << " " << map_vertex_segments.size() << std::endl;
+
+            main_cluster->do_multi_tracking(map_vertex_segments, map_segment_vertices, ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+
+            // for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
+            //   WCPPID::ProtoSegment *sg = it->first;
+            //   auto dQ_vec = sg->get_dQ_vec();
+            //   auto dx_vec = sg->get_dx_vec();
+            //   auto reduced_chi2_vec = sg->get_reduced_chi2_vec();
+            //   auto point_vec = sg->get_point_vec();
+            //   std::cout << dQ_vec.size() << " " << dx_vec.size() << " " << reduced_chi2_vec.size() << " " << point_vec.size() << std::endl;
+
+            //   for (size_t i=0;i!=dQ_vec.size();i++){
+            //     std::cout << "Segment " << sg->get_id() << " Point " << i <<  ", position=(" << point_vec.at(i).x/units::cm << "," << point_vec.at(i).y/units::cm << "," << point_vec.at(i).z/units::cm << ") cm" << ": dQ=" << dQ_vec.at(i) << ", dx=" << dx_vec.at(i)/units::cm << " cm, reduced_chi2=" << reduced_chi2_vec.at(i) << std::endl;
+            //   }
+            // }
+
+            // for (auto it = map_vertex_segments.begin(); it!= map_vertex_segments.end(); it++){
+            //   WCPPID::ProtoVertex *vv = it->first;
+            //   std::cout << "Vertex " << vv->get_id() << ": position=(" << vv->get_fit_pt().x/units::cm << "," << vv->get_fit_pt().y/units::cm << "," << vv->get_fit_pt().z/units::cm << ") cm " << vv->get_dQ() << " " << vv->get_dx()/units::cm << " " << vv->get_reduced_chi2() << std::endl; 
+                        
+            //   }
+
+            // std::cout << "Break Segment at Point (" << break_p.x/units::cm << "," << break_p.y/units::cm << "," << break_p.z/units::cm << ") cm" << " " << acc_segment_id << " " << acc_vertex_id << std::endl;
+
+
+            // double kine_range = test_segment->cal_kine_range();
+            // std::cout << "  Kinetic energy (range): " << kine_range << " MeV" << std::endl;
+            
+            // double kine_dqdx = test_segment->cal_kine_dQdx();
+            // std::cout << "  Kinetic energy (dQ/dx): " << kine_dqdx << " MeV" << std::endl;
+            
+            // // Test topology methods
+            // bool is_shower_traj = test_segment->is_shower_trajectory();
+            // bool is_shower_topo = test_segment->is_shower_topology();
+            // std::cout << "  Is shower (trajectory): " << is_shower_traj << std::endl;
+            // std::cout << "  Is shower (topology): " << is_shower_topo << std::endl;
+            
+            // std::cout << "=== ProtoSegment testing complete ===" << std::endl << std::endl;
+            
+            // Clean up
+            delete test_segment;
+          }
+
+
+          // std::cout << "After Search other tracks" << std::endl;
+          // main_cluster->clear_fit_tracks();
+        	// main_cluster->search_other_tracks(ct_point_cloud, global_wc_map, flash_time*units::microsecond);
+          // bool flag_other_tracks = fid->check_other_tracks(main_cluster, offset_x);
+          // std::cout << 	"Check Other Tracks: " << flag_other_tracks << std::endl;
+          // bool flag_other_clusters = fid->check_other_clusters(main_cluster, additional_clusters);
+          // std::cout << 	"Check Other Clusters: " << flag_other_clusters << std::endl;
+
+          // Point mid_p = main_cluster->adjust_rough_path(); 
+          // std::cout << "Adjust path " << mid_p << std::endl;
+
+          // int kink_num = fid->find_first_kink(main_cluster);
+          // std::cout << "Kink :" << kink_num << std::endl;
+
+          // bool flag_proton = fid->detect_proton(main_cluster, kink_num);
+          // std::cout << "Proton " << flag_proton << std::endl;
+
+          // bool flag_eval_stm = fid->eval_stm(main_cluster, kink_num, 5*units::cm, 0., 35*units::cm, true);
+          // std::cout << "eval_stm " << flag_eval_stm << std::endl;
+        }
+      }
 
       // if STM
       bool tag_stm = fid->check_stm(main_cluster, additional_clusters, offset_x, flash_time, ct_point_cloud, global_wc_map, event_type);
       std::cout << "STM tagger: " << tag_stm << std::endl;
       int flag_stm = 0;
+
+     
+
+     
 
       if( flag_glm==1 || flag_glm==3 ) {
 	cout<<" ---> xpcheck run GLM-1"<<endl;

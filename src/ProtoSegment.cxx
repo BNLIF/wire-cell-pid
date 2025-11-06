@@ -183,6 +183,8 @@ bool WCPPID::ProtoSegment::determine_shower_direction(){
     }    
   }
   
+            //  std::cout << "Shower Topology Direction: " << max_spread/units::cm << " " << large_spread_length/units::cm << " " << total_effective_length/units::cm << std::endl;
+
 
   if (max_spread > 0.7*units::cm && large_spread_length > 0.2 * total_effective_length && total_effective_length > 3*units::cm && total_effective_length < 15*units::cm && ( large_spread_length > 2.7*units::cm || large_spread_length > 0.35 * total_effective_length)
       || max_spread > 0.8*units::cm && large_spread_length > 0.3 * total_effective_length && total_effective_length >= 15*units::cm
@@ -306,7 +308,7 @@ bool WCPPID::ProtoSegment::determine_shower_direction(){
   }
   
   if (flag_dir !=0) return true;
-  else return false;
+  else return false; 
   
   
     
@@ -438,6 +440,7 @@ bool WCPPID::ProtoSegment::is_shower_topology(bool tmp_val){
     }
   }
 
+            // std::cout << "Shower Topology Check: " << max_spread/units::cm << " " << large_spread_length/units::cm << " " << total_effective_length/units::cm << std::endl;
 
   
   if (max_spread > 0.7*units::cm && large_spread_length > 0.2 * total_effective_length && total_effective_length > 3*units::cm && total_effective_length < 15*units::cm && ( large_spread_length > 2.7*units::cm || large_spread_length > 0.35 * total_effective_length)
@@ -1165,7 +1168,7 @@ std::vector<double> WCPPID::ProtoSegment::do_track_comp(std::vector<double>& L ,
   delete h4;
   delete h5;
   
-  //  std::cout << id << " " << get_length()/units::cm << " " << ks1 << " " << ratio1 << " " << ks2 << " " << ratio2 << " " << ks3 << " " << ratio3 << " " << ks4 << " " << ratio4 << " " << ks1-ks2 + (fabs(ratio1-1)-fabs(ratio2-1))/1.5*0.3 << std::endl;
+  // std::cout <<  ks1 << " " << ratio1 << " " << ks2 << " " << ratio2 << " " << ks3 << " " << ratio3 << " " << ks4 << " " << ratio4 << std::endl;
 
   std::vector<double> results;
   results.push_back(eval_ks_ratio(ks1, ks2, ratio1, ratio2)); // direction metric
@@ -1280,6 +1283,7 @@ bool WCPPID::ProtoSegment::do_track_pid(std::vector<double>& L , std::vector<dou
   // reset before return ...
   flag_dir = 0;
   particle_type  = 0;
+  particle_score = 0;
   
   return false;
 }
@@ -1327,6 +1331,8 @@ double WCPPID::ProtoSegment::cal_kine_dQdx(std::vector<double>& vec_dQ, std::vec
     if (dEdx > 50*units::MeV/units::cm ) dEdx = 50*units::MeV/units::cm;
     
     kine_energy += dEdx * vec_dx.at(i);
+
+    // std::cout << vec_dQ.at(i) << " " << vec_dx.at(i) << " " << dEdx * vec_dx.at(i) << std::endl;
   }
   
   return kine_energy;
@@ -1426,7 +1432,6 @@ void WCPPID::ProtoSegment::cal_4mom(){
 
   kenergy_best = kine_energy;
 
-  //  std::cout << id << " " << cal_kine_dQdx() << " " << cal_kine_range() << " " << particle_mass << " " << particle_type << std::endl;
   
   //std::cout << kine_energy << std::endl;
   particle_4mom[3]= kine_energy + particle_mass;
@@ -1437,6 +1442,9 @@ void WCPPID::ProtoSegment::cal_4mom(){
   particle_4mom[0] = mom * v1.X();
   particle_4mom[1] = mom * v1.Y();
   particle_4mom[2] = mom * v1.Z();
+
+  // std::cout << id << " " << cal_kine_dQdx() << " " << cal_kine_range() << " " << particle_mass << " " << particle_type << " " << kine_energy << " " << mom << " " << v1.X() << " " << v1.Y() << " " << v1.Z() << std::endl;
+
 }
 
 TVector3 WCPPID::ProtoSegment::cal_dir_3vector(WCP::Point& p, double dis_cut){
@@ -1753,9 +1761,9 @@ std::tuple<WCPPID::ProtoSegment*, WCPPID::ProtoVertex*, WCPPID::ProtoSegment*> W
   WCPPID::ProtoVertex *vtx = new WCPPID::ProtoVertex(acc_vertex_id, vertex_wcp, cluster_id); acc_vertex_id ++;
   WCPPID::ProtoSegment *sg2 = new WCPPID::ProtoSegment(acc_segment_id, path_wcps2, cluster_id); acc_segment_id ++;
 
-  //std::cout << cluster_id << " " << nbreak_fit << " " << fit_pt_vec.size() << " " << dQ_vec.size() << " " << fit_index_vec.size() << " " << pu_vec.size() << " " << reduced_chi2_vec.size() << " " << nbreak << " " << wcpt_vec.size() << std::endl;
-  //  if (fit_index_vec.size()==0)
-  //  fit_index_vec.resize(dQ_vec.size(),0);
+  if (fit_index_vec.size()==0) fit_index_vec.resize(dQ_vec.size(),0);
+  if (fit_flag_skip.size()==0) fit_flag_skip.resize(dQ_vec.size(),false);
+  // std::cout << cluster_id << " " << nbreak_fit << " " << fit_pt_vec.size() << " " << dQ_vec.size() << " " << fit_index_vec.size() << " " << pu_vec.size() << " " << reduced_chi2_vec.size() << " " << nbreak << " " << wcpt_vec.size() << std::endl;
 
   
   // fill in the vertex
