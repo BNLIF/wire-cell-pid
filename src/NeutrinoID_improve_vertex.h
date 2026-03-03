@@ -1060,53 +1060,53 @@ bool WCPPID::NeutrinoID::search_for_vertex_activities(WCPPID::ProtoVertex *vtx, 
       
       //    for (auto it = sg_set.begin(); it != sg_set.end(); it++){
       for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
-	WCPPID::ProtoSegment *sg = it->first;
-	//	std::cout << sg->get_id() << std::endl;
-	std::pair<double, WCP::Point> results = sg->get_closest_point(test_p);
-	if (results.first < min_dis) min_dis = results.first;
-	
-	std::tuple<double, double, double> results_2d = sg->get_closest_2d_dis(test_p);
-	if (std::get<0>(results_2d) < min_dis_u) min_dis_u = std::get<0>(results_2d);
-	if (std::get<1>(results_2d) < min_dis_v) min_dis_v = std::get<1>(results_2d);
-	if (std::get<2>(results_2d) < min_dis_w) min_dis_w = std::get<2>(results_2d);
+        WCPPID::ProtoSegment *sg = it->first;
+        //	std::cout << sg->get_id() << std::endl;
+        std::pair<double, WCP::Point> results = sg->get_closest_point(test_p);
+        if (results.first < min_dis) min_dis = results.first;
+        
+        std::tuple<double, double, double> results_2d = sg->get_closest_2d_dis(test_p);
+        if (std::get<0>(results_2d) < min_dis_u) min_dis_u = std::get<0>(results_2d);
+        if (std::get<1>(results_2d) < min_dis_v) min_dis_v = std::get<1>(results_2d);
+        if (std::get<2>(results_2d) < min_dis_w) min_dis_w = std::get<2>(results_2d);
       }
       
       // std::cout << min_dis/units::cm << " " << flag_terminals.at(candidate_wcps.at(i).index) << " " <<  (min_dis_u + min_dis_v + min_dis_w)/units::cm << std::endl;
       
       if (min_dis > 0.6*units::cm   && min_dis_u + min_dis_v + min_dis_w > 1.2*units::cm){
-	TVector3 dir(test_p.x - vtx->get_fit_pt().x, test_p.y - vtx->get_fit_pt().y, test_p.z - vtx->get_fit_pt().z);
-	double sum_angle = 0;
-	double min_angle = 1e9;
-	for (size_t j=0;j!=saved_dirs.size();j++){
-	  //	std::cout << dir.Angle(saved_dirs.at(j))/3.1415926*180. << std::endl;
-	  double angle = dir.Angle(saved_dirs.at(j))/3.1415926*180.;
-	  sum_angle += angle;
-	  if (angle < min_angle) min_angle = angle;
-	}
-	//	std::cout << min_angle << std::endl;
-	
-	double sum_charge=0;
-	int ncount = 0;
-	if (!ct_point_cloud->get_closest_dead_chs(test_p,0)){
-	  sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,0);
-	  ncount ++;
-	}
-	if (!ct_point_cloud->get_closest_dead_chs(test_p,1)){
-	  sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,1);
-	  ncount ++;
-	}
-	if (!ct_point_cloud->get_closest_dead_chs(test_p,2)){
-	  sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,2);
-	  ncount ++;
-	}
-	if (ncount!=0) sum_charge /= ncount;
-	
-	//	std::cout << i << " " << dis/units::cm << " " << min_dis/units::cm << " " << flag_terminals.at(candidate_wcps.at(i).index)  << min_angle << " " << sum_angle << " " << sum_charge << " " << (sum_angle)  * (sum_charge+1e-9) << " " << min_dis_u << " " << min_dis_v << " " << min_dis_w << " " << min_dis_u + min_dis_v + min_dis_w << std::endl; 
-	
-	if ((sum_angle)  * (sum_charge+1e-9) > max_dis){
-	  max_dis = (sum_angle)  * (sum_charge+1e-9);
-	  max_wcp = candidate_wcps.at(i);
-	}
+        TVector3 dir(test_p.x - vtx->get_fit_pt().x, test_p.y - vtx->get_fit_pt().y, test_p.z - vtx->get_fit_pt().z);
+        double sum_angle = 0;
+        double min_angle = 1e9;
+        for (size_t j=0;j!=saved_dirs.size();j++){
+          //	std::cout << dir.Angle(saved_dirs.at(j))/3.1415926*180. << std::endl;
+          double angle = dir.Angle(saved_dirs.at(j))/3.1415926*180.;
+          sum_angle += angle;
+          if (angle < min_angle) min_angle = angle;
+        }
+        //	std::cout << min_angle << std::endl;
+        
+        double sum_charge=0;
+        int ncount = 0;
+        if (!ct_point_cloud->get_closest_dead_chs(test_p,0)){
+          sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,0);
+          ncount ++;
+        }
+        if (!ct_point_cloud->get_closest_dead_chs(test_p,1)){
+          sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,1);
+          ncount ++;
+        }
+        if (!ct_point_cloud->get_closest_dead_chs(test_p,2)){
+          sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,2);
+          ncount ++;
+        }
+        if (ncount!=0) sum_charge /= ncount;
+        
+        //	std::cout << i << " " << dis/units::cm << " " << min_dis/units::cm << " " << flag_terminals.at(candidate_wcps.at(i).index)  << min_angle << " " << sum_angle << " " << sum_charge << " " << (sum_angle)  * (sum_charge+1e-9) << " " << min_dis_u << " " << min_dis_v << " " << min_dis_w << " " << min_dis_u + min_dis_v + min_dis_w << std::endl; 
+        
+        if ((sum_angle)  * (sum_charge+1e-9) > max_dis){
+          max_dis = (sum_angle)  * (sum_charge+1e-9);
+          max_wcp = candidate_wcps.at(i);
+        }
       }
     }
   }
@@ -1118,55 +1118,55 @@ bool WCPPID::NeutrinoID::search_for_vertex_activities(WCPPID::ProtoVertex *vtx, 
     for (size_t i=0; i!=candidate_wcps.size(); i++){
       
       if (flag_terminals.at(candidate_wcps.at(i).index)){
-	if (candidate_wcps.at(i).index == vtx->get_wcpt().index) continue;
-	double dis = sqrt(pow(candidate_wcps.at(i).x - vtx->get_fit_pt().x ,2) + pow(candidate_wcps.at(i).y - vtx->get_fit_pt().y,2) + pow(candidate_wcps.at(i).z - vtx->get_fit_pt().z,2));
-	double min_dis = 1e9;
-	double min_dis_u = 1e9;
-	double min_dis_v = 1e9;
-	double min_dis_w = 1e9;
-	Point test_p(candidate_wcps.at(i).x, candidate_wcps.at(i).y, candidate_wcps.at(i).z);
-	
-	//    for (auto it = sg_set.begin(); it != sg_set.end(); it++){
-	for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
-	  WCPPID::ProtoSegment *sg = it->first;
-	  std::pair<double, WCP::Point> results = sg->get_closest_point(test_p);
-	  if (results.first < min_dis) min_dis = results.first;
-	  
-	  std::tuple<double, double, double> results_2d = sg->get_closest_2d_dis(test_p);
-	  if (std::get<0>(results_2d) < min_dis_u) min_dis_u = std::get<0>(results_2d);
-	  if (std::get<1>(results_2d) < min_dis_v) min_dis_v = std::get<1>(results_2d);
-	  if (std::get<2>(results_2d) < min_dis_w) min_dis_w = std::get<2>(results_2d);
-	}
+        if (candidate_wcps.at(i).index == vtx->get_wcpt().index) continue;
+        double dis = sqrt(pow(candidate_wcps.at(i).x - vtx->get_fit_pt().x ,2) + pow(candidate_wcps.at(i).y - vtx->get_fit_pt().y,2) + pow(candidate_wcps.at(i).z - vtx->get_fit_pt().z,2));
+        double min_dis = 1e9;
+        double min_dis_u = 1e9;
+        double min_dis_v = 1e9;
+        double min_dis_w = 1e9;
+        Point test_p(candidate_wcps.at(i).x, candidate_wcps.at(i).y, candidate_wcps.at(i).z);
+        
+        //    for (auto it = sg_set.begin(); it != sg_set.end(); it++){
+        for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
+          WCPPID::ProtoSegment *sg = it->first;
+          std::pair<double, WCP::Point> results = sg->get_closest_point(test_p);
+          if (results.first < min_dis) min_dis = results.first;
+          
+          std::tuple<double, double, double> results_2d = sg->get_closest_2d_dis(test_p);
+          if (std::get<0>(results_2d) < min_dis_u) min_dis_u = std::get<0>(results_2d);
+          if (std::get<1>(results_2d) < min_dis_v) min_dis_v = std::get<1>(results_2d);
+          if (std::get<2>(results_2d) < min_dis_w) min_dis_w = std::get<2>(results_2d);
+        }
 
-	
-	
-	if (min_dis > 0.36*units::cm   && min_dis_u + min_dis_v + min_dis_w > 0.8*units::cm){
+        
+        
+        if (min_dis > 0.36*units::cm   && min_dis_u + min_dis_v + min_dis_w > 0.8*units::cm){
 
-	  double sum_charge=0;
-	  int ncount = 0;
-	  if (!ct_point_cloud->get_closest_dead_chs(test_p,0)){
-	    sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,0);
-	    ncount ++;
-	  }
-	  if (!ct_point_cloud->get_closest_dead_chs(test_p,1)){
-	    sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,1);
-	    ncount ++;
-	  }
-	  if (!ct_point_cloud->get_closest_dead_chs(test_p,2)){
-	    sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,2);
-	    ncount ++;
-	  }
-	  if (ncount!=0) sum_charge /= ncount;
-	  
-	  // std::cout << min_dis/units::cm << " " << (min_dis_u + min_dis_v + min_dis_w)/units::cm << " " << sum_charge << std::endl;
+          double sum_charge=0;
+          int ncount = 0;
+          if (!ct_point_cloud->get_closest_dead_chs(test_p,0)){
+            sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,0);
+            ncount ++;
+          }
+          if (!ct_point_cloud->get_closest_dead_chs(test_p,1)){
+            sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,1);
+            ncount ++;
+          }
+          if (!ct_point_cloud->get_closest_dead_chs(test_p,2)){
+            sum_charge += ct_point_cloud->get_ave_charge(test_p, 0.3*units::cm,2);
+            ncount ++;
+          }
+          if (ncount!=0) sum_charge /= ncount;
+          
+          // std::cout << min_dis/units::cm << " " << (min_dis_u + min_dis_v + min_dis_w)/units::cm << " " << sum_charge << std::endl;
 
 
-	  
-	  if (min_dis + ( min_dis_u + min_dis_v + min_dis_w)/sqrt(3.) > max_dis && sum_charge > 20000){
-	    max_dis = min_dis + (min_dis_u + min_dis_v + min_dis_w)/sqrt(3.);
-	    max_wcp = candidate_wcps.at(i);
-	  }
-	}
+          
+          if (min_dis + ( min_dis_u + min_dis_v + min_dis_w)/sqrt(3.) > max_dis && sum_charge > 20000){
+            max_dis = min_dis + (min_dis_u + min_dis_v + min_dis_w)/sqrt(3.);
+            max_wcp = candidate_wcps.at(i);
+          }
+        }
       }
     }
   }
