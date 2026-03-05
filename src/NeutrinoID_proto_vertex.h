@@ -397,10 +397,9 @@ void WCPPID::NeutrinoID::init_point_segment(WCPPID::PR3DCluster *temp_cluster){
 }
 
 WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster *temp_cluster, bool flag_back_search){
+  const bool flag_print = is_debug("init_first_segment");
   // do the first search of the trajectory ...
   std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = temp_cluster->get_two_boundary_wcps(2);
-
-  
   
   if (temp_cluster == main_cluster){
     // main cluster, start from the downstream point ...
@@ -431,13 +430,35 @@ WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster
       wcps.second = wcp1;
     }
   }
-  
-  
+
+  if (flag_print){
+    std::cout << "[init_first_segment] cluster_id=" << temp_cluster->get_cluster_id()
+              << " is_main=" << (temp_cluster == main_cluster)
+              << " flag_back_search=" << flag_back_search
+              << "  start wcp: index=" << wcps.first.index
+              << " (" << wcps.first.x << ", " << wcps.first.y << ", " << wcps.first.z << ") "
+              << "  end   wcp: index=" << wcps.second.index
+              << " (" << wcps.second.x << ", " << wcps.second.y << ", " << wcps.second.z << ") "
+              << std::endl;
+  }
+
   // good for the first track
   temp_cluster->dijkstra_shortest_paths(wcps.first,2); 
   temp_cluster->cal_shortest_path(wcps.second,2);
 
-  
+  if (flag_print){
+    const auto& path_wcps = temp_cluster->get_path_wcps();
+    std::cout << "[init_first_segment] path_wcps size=" << path_wcps.size() << std::endl;
+    size_t i = 0;
+    for (const auto& wcp : path_wcps){
+      std::cout << "[init_first_segment]   [" << i << "] index=" << wcp.index
+                << " (" << wcp.x/units::cm
+                << ", " << wcp.y/units::cm
+                << ", " << wcp.z/units::cm << ") cm" << std::endl;
+      i++;
+    }
+  }
+
   //  std::cout << temp_cluster->get_cluster_id() << " " << wcps.first.index << " " << wcps.first.x << " " << wcps.first.y << " " << wcps.first.z << " " << wcps.first.index_u << " " << wcps.first.index_v << " " << wcps.first.index_w << " " << wcps.second.index << " " << wcps.second.x << " " << wcps.second.y << " " << wcps.second.z << " " << wcps.second.index_u << " " << wcps.second.index_v << " " << wcps.second.index_w << " " << std::endl; 
   /* { */
   /*   Point test_p(wcps.first.x, wcps.first.y, wcps.first.z); */
@@ -498,6 +519,23 @@ WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster
   
   // sg1->print_dis();
   // std::cout << v1->get_fit_init_dis()/units::cm << " " << v2->get_fit_init_dis()/units::cm << std::endl;
+
+  if (flag_print){
+    if (sg1){
+      std::cout << "[init_first_segment] result: sg1 id=" << sg1->get_id()
+                << " path_pts=" << temp_cluster->get_fine_tracking_path().size() << std::endl;
+      const auto& fine_path = temp_cluster->get_fine_tracking_path();
+      size_t idx = 0;
+      for (const auto& pt : fine_path){
+        std::cout << "[init_first_segment]   fine_path[" << idx << "] = (" 
+                  << pt.x/units::cm << ", " << pt.y/units::cm << ", " << pt.z/units::cm << ") cm" << std::endl;
+        idx++;
+      }
+    }
+    else
+      std::cout << "[init_first_segment] result: sg1=null (tracking failed or path too short)" << std::endl;
+  }
+
   return sg1;
 }
 

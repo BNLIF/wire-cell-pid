@@ -35,12 +35,13 @@ int main(int argc, char* argv[])
   bool flag_dl_vtx = true;
   bool flag_PosEfield_corr = false;// Position and E-field correction for SCE
   bool flag_timestamp = false;
+  std::vector<std::string> debug_func_names; // -g<func_name>, e.g. -ginit_first_segment
 
   float dl_vtx_cut = 2.0;
 
   bool flag_lifetime_corr = true;
 
-  int flag_ssmsp = 0; //Save spacepoints for ssm tagger, 0 only when tagged, 1 always, -1 never  
+  int flag_ssmsp = -1; //Save spacepoints for ssm tagger, 0 only when tagged, 1 always, -1 never  
 
   for (Int_t i=1;i!=argc;i++){
     switch(argv[i][1]){
@@ -73,6 +74,9 @@ int main(int argc, char* argv[])
       break;
     case 's':
       flag_ssmsp = atoi(&argv[i][2]);
+      break;
+    case 'g':
+      debug_func_names.push_back(std::string(&argv[i][2]));
       break;
     }
   }
@@ -1357,7 +1361,7 @@ int main(int argc, char* argv[])
     }
 
     double offset_x =     (flash_time - time_offset)*2./nrebin*time_slice_width;
-    WCPPID::NeutrinoID *neutrino = new WCPPID::NeutrinoID(main_cluster, additional_clusters, live_clusters, fid, gds, nrebin, frame_length, unit_dis, &ct_point_cloud, global_wc_map, flash_time, offset_x, flag_neutrino_id_process, flag_bdt, flag_dl_vtx, dl_vtx_cut, match_isFC);
+    WCPPID::NeutrinoID *neutrino = new WCPPID::NeutrinoID(main_cluster, additional_clusters, live_clusters, fid, gds, nrebin, frame_length, unit_dis, &ct_point_cloud, global_wc_map, flash_time, offset_x, flag_neutrino_id_process, flag_bdt, flag_dl_vtx, dl_vtx_cut, match_isFC, true, std::set<std::string>(debug_func_names.begin(), debug_func_names.end()));
     neutrino->set_save_ssmsp(flag_ssmsp);
     neutrino_vec.push_back(neutrino);
     map_flash_tpc_pair_neutrino_id[std::make_pair(it->first, it->second)] = neutrino;

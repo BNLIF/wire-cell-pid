@@ -39,9 +39,10 @@ using namespace WCP;
 
 #include "NeutrinoID_kine.h"
 
-WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<WCPPID::PR3DCluster*>& other_clusters1, std::vector<WCPPID::PR3DCluster*>& all_clusters1, WCPPID::ToyFiducial* fid, WCPSst::GeomDataSource& gds, int nrebin, int frame_length, float unit_dis, ToyCTPointCloud* ct_point_cloud, std::map<int,std::map<const GeomWire*, SMGCSelection > >& global_wc_map, double flash_time, double offset_x, int flag_neutrino_id_process, int flag_bdt, bool flag_dl_vtx, double dl_vtx_cut, float match_isFC, bool is_neutrino_candidate)
+WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<WCPPID::PR3DCluster*>& other_clusters1, std::vector<WCPPID::PR3DCluster*>& all_clusters1, WCPPID::ToyFiducial* fid, WCPSst::GeomDataSource& gds, int nrebin, int frame_length, float unit_dis, ToyCTPointCloud* ct_point_cloud, std::map<int,std::map<const GeomWire*, SMGCSelection > >& global_wc_map, double flash_time, double offset_x, int flag_neutrino_id_process, int flag_bdt, bool flag_dl_vtx, double dl_vtx_cut, float match_isFC, bool is_neutrino_candidate, const std::set<std::string>& debug_funcs_init)
   : acc_vertex_id(0)
   , acc_segment_id(0)
+  , debug_funcs(debug_funcs_init)
   , main_cluster(main_cluster1)
   , other_clusters(other_clusters1)
   , all_clusters(all_clusters1)
@@ -62,7 +63,7 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
 {
   bool flag_other_clusters = true;
   bool flag_main_cluster = true;
-  bool flag_tagger = true;
+  bool flag_tagger = false;
 
   // hack the main cluster
   // for (auto it = other_clusters.begin(); it != other_clusters.end(); it++){

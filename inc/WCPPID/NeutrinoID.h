@@ -12,6 +12,9 @@
 
 #include "WCPPID/Map_Proto_Vertex_Segment.h"
 
+#include <set>
+#include <string>
+
 //#include "WCPPID/ProtoVertex.h"
 //#include "Minuit2/FCNBase.h"
 
@@ -1597,7 +1600,13 @@ namespace WCPPID{
   
   class NeutrinoID{
   public:
-    NeutrinoID(WCPPID::PR3DCluster *main_cluster, std::vector<WCPPID::PR3DCluster*>& other_clusters, std::vector<WCPPID::PR3DCluster*>& all_clusters, WCPPID::ToyFiducial* fid, WCPSst::GeomDataSource& gds, int nrebin, int frame_length, float unit_dis,	WCP::ToyCTPointCloud* ct_point_cloud, std::map<int,std::map<const WCP::GeomWire*, WCP::SMGCSelection > >& global_wc_map, double flash_time, double offset_x, int flag_neutrino_id_process=1, int flag_bdt = 0, bool flag_dl_vtx = false, double dl_vtx_cut = 2.0*units::cm, float match_isFC = 0, bool is_neutrino_candidate = true);
+    // Enable/check named debug prints. Use the function name as the key.
+    // From a run script: call neutrino->enable_debug("init_first_segment").
+    // Multiple functions can be enabled independently.
+    void enable_debug(const std::string& func_name){ debug_funcs.insert(func_name); }
+    bool is_debug(const std::string& func_name) const { return debug_funcs.count(func_name) > 0; }
+
+    NeutrinoID(WCPPID::PR3DCluster *main_cluster, std::vector<WCPPID::PR3DCluster*>& other_clusters, std::vector<WCPPID::PR3DCluster*>& all_clusters, WCPPID::ToyFiducial* fid, WCPSst::GeomDataSource& gds, int nrebin, int frame_length, float unit_dis,	WCP::ToyCTPointCloud* ct_point_cloud, std::map<int,std::map<const WCP::GeomWire*, WCP::SMGCSelection > >& global_wc_map, double flash_time, double offset_x, int flag_neutrino_id_process=1, int flag_bdt = 0, bool flag_dl_vtx = false, double dl_vtx_cut = 2.0*units::cm, float match_isFC = 0, bool is_neutrino_candidate = true, const std::set<std::string>& debug_funcs_init = {});
     ~NeutrinoID();
 
     // deal with the map ...
@@ -1960,6 +1969,8 @@ namespace WCPPID{
     
     
   protected:
+    std::set<std::string> debug_funcs;  // names of functions with debug printing on; empty = all off
+
     float match_isFC;
       
     int neutrino_type;
