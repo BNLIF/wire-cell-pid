@@ -1014,7 +1014,7 @@ void WCPPID::NeutrinoID::find_other_segments(WCPPID::PR3DCluster* temp_cluster, 
       int save_index = special_A;
       double save_dis = 1e9;
       for (auto it1 = map_connection[special_A].begin(); it1!=map_connection[special_A].end();it1++){
-    	double temp_dis = sqrt(pow(cloud.pts[special_A].x - cloud.pts[*it1].x,2) + pow(cloud.pts[*it1].y - cloud.pts[*it1].y,2) + pow(cloud.pts[*it1].z - cloud.pts[*it1].z,2));
+    	double temp_dis = sqrt(pow(cloud.pts[special_A].x - cloud.pts[*it1].x,2) + pow(cloud.pts[special_A].y - cloud.pts[*it1].y,2) + pow(cloud.pts[special_A].z - cloud.pts[*it1].z,2));
     	if (temp_dis < save_dis){
     	  save_index = *it1;
     	  save_dis = temp_dis;
