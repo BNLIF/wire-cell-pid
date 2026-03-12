@@ -125,176 +125,176 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
       find_proto_vertex(main_cluster, true, 2);
 
     
-      // deal with shower ...
-      clustering_points(main_cluster);
-      separate_track_shower(main_cluster);
-      determine_direction(main_cluster);
+      // // deal with shower ...
+      // clustering_points(main_cluster);
+      // separate_track_shower(main_cluster);
+      // determine_direction(main_cluster);
 
     
-      shower_determing_in_main_cluster(main_cluster);
-      determine_main_vertex(main_cluster);
-      //improve_vertex(main_cluster, false); // do not search for vertex activities ...
+      // shower_determing_in_main_cluster(main_cluster);
+      // determine_main_vertex(main_cluster);
+      // //improve_vertex(main_cluster, false); // do not search for vertex activities ...
 
    
-      if (main_vertex !=0){
-        map_cluster_main_vertices[main_cluster] = main_vertex;
-        main_vertex = 0;
-      }
+      // if (main_vertex !=0){
+      //   map_cluster_main_vertices[main_cluster] = main_vertex;
+      //   main_vertex = 0;
+      // }
     
     }
 
   
-    // loop over other clusters ...
-     if (flag_other_clusters){
-      for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
-        //if (skip_clusters.find(*it) != skip_clusters.end()) continue;
-        //if ((*it)->get_cluster_id()!=75) continue;
-        //std::cout << (*it)->get_cluster_id() << " " << map_cluster_length[*it]/units::cm << std::endl;
+    // // loop over other clusters ...
+    //  if (flag_other_clusters){
+    //   for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
+    //     //if (skip_clusters.find(*it) != skip_clusters.end()) continue;
+    //     //if ((*it)->get_cluster_id()!=75) continue;
+    //     //std::cout << (*it)->get_cluster_id() << " " << map_cluster_length[*it]/units::cm << std::endl;
       
-        if (map_cluster_length[*it] > 6*units::cm){
-        //if (map_cluster_length[*it] > 4*units::cm){
-	      // find the proto vertex ...
-	        find_proto_vertex(*it, true, 2);
-	        // deal with shower ...
-	        clustering_points(*it);
-          separate_track_shower(*it);
-          determine_direction(*it);    
-          shower_determing_in_main_cluster(*it);
-          determine_main_vertex(*it, false);
-          //improve_vertex(main_cluster, false); // do not search for vertex activity
+    //     if (map_cluster_length[*it] > 6*units::cm){
+    //     //if (map_cluster_length[*it] > 4*units::cm){
+	  //     // find the proto vertex ...
+	  //       find_proto_vertex(*it, true, 2);
+	  //       // deal with shower ...
+	  //       clustering_points(*it);
+    //       separate_track_shower(*it);
+    //       determine_direction(*it);    
+    //       shower_determing_in_main_cluster(*it);
+    //       determine_main_vertex(*it, false);
+    //       //improve_vertex(main_cluster, false); // do not search for vertex activity
           
-          if (main_vertex !=0){
-            map_cluster_main_vertices[*it] = main_vertex;
-            main_vertex = 0;
-          }
-       }else{
-        if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
+    //       if (main_vertex !=0){
+    //         map_cluster_main_vertices[*it] = main_vertex;
+    //         main_vertex = 0;
+    //       }
+    //    }else{
+    //     if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
 
         
-        clustering_points(*it);
-        separate_track_shower(*it);
-        determine_direction(*it);
-        shower_determing_in_main_cluster(*it);
-        determine_main_vertex(*it, false);
-        if (main_vertex !=0){
-          map_cluster_main_vertices[*it] = main_vertex;
-          main_vertex = 0;
-        }
-      }
+    //     clustering_points(*it);
+    //     separate_track_shower(*it);
+    //     determine_direction(*it);
+    //     shower_determing_in_main_cluster(*it);
+    //     determine_main_vertex(*it, false);
+    //     if (main_vertex !=0){
+    //       map_cluster_main_vertices[*it] = main_vertex;
+    //       main_vertex = 0;
+    //     }
+    //   }
     
-      }
-      //  deghost ...
-      deghosting();
-    }
+    //   }
+    //   //  deghost ...
+    //   deghosting();
+    // }
  
   
-    if (flag_main_cluster){
-      if (flag_dl_vtx){
-        bool flag_change = determine_overall_main_vertex_DL();
-        if (!flag_change) determine_overall_main_vertex();
-      }else{
-        determine_overall_main_vertex();
-      }
-    }
+    // if (flag_main_cluster){
+    //   if (flag_dl_vtx){
+    //     bool flag_change = determine_overall_main_vertex_DL();
+    //     if (!flag_change) determine_overall_main_vertex();
+    //   }else{
+    //     determine_overall_main_vertex();
+    //   }
+    // }
 
   
   
-    if (flag_main_cluster && main_vertex !=0){
+    // if (flag_main_cluster && main_vertex !=0){
       
       
-      // fit the vertex in 3D 
-      improve_vertex(main_cluster, true, true);
+    //   // fit the vertex in 3D 
+    //   improve_vertex(main_cluster, true, true);
 
       
     
-      clustering_points(main_cluster);
-      examine_direction(main_vertex);
+    //   clustering_points(main_cluster);
+    //   examine_direction(main_vertex);
       
       
-      std::cout << "Overall main Vertex " << main_vertex->get_fit_pt() << " connecting to: ";
-      for (auto it = map_vertex_segments[main_vertex].begin(); it!=map_vertex_segments[main_vertex].end(); it++){
-        std::cout << (*it)->get_id() << ", ";
-      }
-      std::cout << " in cluster " << main_vertex->get_cluster_id() << std::endl;
-      print_segs_info(main_vertex->get_cluster_id(), main_vertex);
+    //   std::cout << "Overall main Vertex " << main_vertex->get_fit_pt() << " connecting to: ";
+    //   for (auto it = map_vertex_segments[main_vertex].begin(); it!=map_vertex_segments[main_vertex].end(); it++){
+    //     std::cout << (*it)->get_id() << ", ";
+    //   }
+    //   std::cout << " in cluster " << main_vertex->get_cluster_id() << std::endl;
+    //   print_segs_info(main_vertex->get_cluster_id(), main_vertex);
       
       
-      // overall
-      separate_track_shower();
-      // for charge based on calculation ...
-      collect_2D_charges();
+    //   // overall
+    //   separate_track_shower();
+    //   // for charge based on calculation ...
+    //   collect_2D_charges();
 
 
       
-      // cluster E&M ...
-      shower_clustering_with_nv();
+    //   // cluster E&M ...
+    //   shower_clustering_with_nv();
 
       
-    }
+    // }
 
-    if (flag_tagger){
+  //   if (flag_tagger){
 
-      fill_kine_tree(kine_info);
+  //     fill_kine_tree(kine_info);
       
-      bool flag_cosmic = cosmic_tagger();
+  //     bool flag_cosmic = cosmic_tagger();
 
 
-      // set the cosmic flag anyway ...
-      // if (flag_cosmic) tagger_info.cosmic_flag = false;
+  //     // set the cosmic flag anyway ...
+  //     // if (flag_cosmic) tagger_info.cosmic_flag = false;
       
-      auto results = numu_tagger();
-      bool flag_long_muon = results.first;
+  //     auto results = numu_tagger();
+  //     bool flag_long_muon = results.first;
 
-      bool flag_ssm = ssm_tagger(); 
-      if(flag_ssm) std::cout<<"SSM Spotted"<<std::endl;
+  //     bool flag_ssm = ssm_tagger(); 
+  //     if(flag_ssm) std::cout<<"SSM Spotted"<<std::endl;
       
-      nue_tagger(results.second);
+  //     nue_tagger(results.second);
 
-      bool flag_sp = singlephoton_tagger(results.second);
-      std::cout<<"NeutrinoID.cxx line 241"<<std::endl;
-      if (flag_sp){tagger_info.photon_flag = true;}
+  //     bool flag_sp = singlephoton_tagger(results.second);
+  //     std::cout<<"NeutrinoID.cxx line 241"<<std::endl;
+  //     if (flag_sp){tagger_info.photon_flag = true;}
 
       
-    }
+  //   }
 
-    if (flag_bdt >0)
-        tagger_info.numu_score = cal_numu_bdts_xgboost();
+  //   if (flag_bdt >0)
+  //       tagger_info.numu_score = cal_numu_bdts_xgboost();
 
     
-    if (flag_bdt == 1){
-      // Xgboost training ...
-      tagger_info.nue_score = cal_bdts_xgboost();
+  //   if (flag_bdt == 1){
+  //     // Xgboost training ...
+  //     tagger_info.nue_score = cal_bdts_xgboost();
           
-    }else if (flag_bdt == 2){
-      // TMVA training ...
-      tagger_info.nue_score = cal_bdts();
-      // numuCC TMVA training ...
-    }
-  }else{
+  //   }else if (flag_bdt == 2){
+  //     // TMVA training ...
+  //     tagger_info.nue_score = cal_bdts();
+  //     // numuCC TMVA training ...
+  //   }
+  // }else{
       
-    if (flag_main_cluster){
-      if (map_cluster_length[main_cluster] > 3*units::cm){
-        // find the proto vertex ...
-       find_proto_vertex(main_cluster, true, 2);
-      }else{
-        if (!find_proto_vertex(main_cluster, false, 1)) init_point_segment(main_cluster);
-      }
-    }
+  //   if (flag_main_cluster){
+  //     if (map_cluster_length[main_cluster] > 3*units::cm){
+  //       // find the proto vertex ...
+  //      find_proto_vertex(main_cluster, true, 2);
+  //     }else{
+  //       if (!find_proto_vertex(main_cluster, false, 1)) init_point_segment(main_cluster);
+  //     }
+  //   }
 
   
-    // loop over other clusters ...
-     if (flag_other_clusters){ 
-      for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
-        if (map_cluster_length[*it] > 6*units::cm){
-	        find_proto_vertex(*it, true, 2);
-        }else{
-          if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
-        }
+  //   // loop over other clusters ...
+  //    if (flag_other_clusters){ 
+  //     for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
+  //       if (map_cluster_length[*it] > 6*units::cm){
+	//         find_proto_vertex(*it, true, 2);
+  //       }else{
+  //         if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
+  //       }
 
-      }
-      //  deghost ...
-      deghosting();
-    }
+  //     }
+  //     //  deghost ...
+  //     deghosting();
+  //   }
 
   }
 

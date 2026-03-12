@@ -1,4 +1,5 @@
 #include "TMatrixDEigen.h"
+#include <chrono>
 
 std::pair<WCP::Point, TVector3> WCPPID::NeutrinoID::calc_PCA_main_axis(WCP::PointVector& points){
 
@@ -70,13 +71,16 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
   if (temp_cluster->get_point_cloud_steiner()==0) return false;
   if (temp_cluster->get_point_cloud_steiner()->get_num_points()<2) return false;
 
+  const bool flag_timing = true; // set to true to enable timing printouts
 
+  using Clock = std::chrono::high_resolution_clock;
+  using ms = std::chrono::duration<double, std::milli>;
+  auto t_total = Clock::now();
+  auto t0 = Clock::now();
 
-  
   WCPPID::ProtoSegment* sg1 = init_first_segment(temp_cluster, flag_back_search);
+  if (flag_timing) std::cout << "find_proto_vertex timing: init_first_segment took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
 
-  
-  
   if (sg1 == 0) return false;
 
 
@@ -90,11 +94,15 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
     if (flag_break_track){
       std::vector<WCPPID::ProtoSegment*> remaining_segments;
       remaining_segments.push_back(sg1);
+      t0 = Clock::now();
       break_segments(remaining_segments, temp_cluster);
+      if (flag_timing) std::cout << "find_proto_vertex timing: break_segments took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
             
       //      if (flag_check_end_segments)	check_end_segments(temp_cluster);
       // if a straight length is better for a segment ...
+      t0 = Clock::now();
       examine_structure(temp_cluster);
+      if (flag_timing) std::cout << "find_proto_vertex timing: examine_structure took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
       
     }else{
       
@@ -115,15 +123,19 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
     
     // find other segments ...
     for (size_t i=0;i!=nrounds_find_other_tracks;i++){
+      t0 = Clock::now();
       find_other_segments(temp_cluster, flag_break_track);
+      if (flag_timing) std::cout << "find_proto_vertex timing: find_other_segments round " << i << " took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
     }
 
     
     
     if (temp_cluster == main_cluster){
       // merge two tracks if their angles are consistent
+      t0 = Clock::now();
       if ( examine_structure_3(temp_cluster) )
 	temp_cluster->do_multi_tracking(map_vertex_segments, map_segment_vertices, *ct_point_cloud, global_wc_map, flash_time*units::microsecond, true, true, true);
+      if (flag_timing) std::cout << "find_proto_vertex timing: examine_structure_3 took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
       
     }
     
@@ -131,25 +143,33 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
     
     
     // examine the vertices ...
+    t0 = Clock::now();
     examine_vertices(temp_cluster);
+    if (flag_timing) std::cout << "find_proto_vertex timing: examine_vertices took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
 
    
      
     // examine partial identical segments
+    t0 = Clock::now();
     examine_partial_identical_segments(temp_cluster);
+    if (flag_timing) std::cout << "find_proto_vertex timing: examine_partial_identical_segments took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
 
    
      
     // examine the two initial points ...
+    t0 = Clock::now();
     if (temp_cluster == main_cluster && main_cluster_initial_pair_vertices.first!=0)
       examine_vertices_3();
+    if (flag_timing) std::cout << "find_proto_vertex timing: examine_vertices_3 took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
 
  
      
     
 
-    
+    t0 = Clock::now();
     temp_cluster->do_multi_tracking(map_vertex_segments, map_segment_vertices, *ct_point_cloud, global_wc_map, flash_time*units::microsecond, true, true, true);
+    if (flag_timing) std::cout << "find_proto_vertex timing: final do_multi_tracking took " << std::chrono::duration_cast<ms>(Clock::now()-t0).count() << " ms" << std::endl;
+    if (flag_timing) std::cout << "find_proto_vertex timing: TOTAL took " << std::chrono::duration_cast<ms>(Clock::now()-t_total).count() << " ms" << std::endl;
     
     return true;
   }
@@ -398,6 +418,10 @@ void WCPPID::NeutrinoID::init_point_segment(WCPPID::PR3DCluster *temp_cluster){
 
 WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster *temp_cluster, bool flag_back_search){
   const bool flag_print = is_debug("init_first_segment");
+  const bool flag_timing = true; // set to true to enable timing printouts
+  using IFSClock = std::chrono::high_resolution_clock;
+  using IFSms = std::chrono::duration<double, std::milli>;
+  auto ifs_t0 = IFSClock::now();
   // do the first search of the trajectory ...
   std::pair<WCPointCloud<double>::WCPoint,WCPointCloud<double>::WCPoint> wcps = temp_cluster->get_two_boundary_wcps(2);
   
@@ -443,8 +467,10 @@ WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster
   }
 
   // good for the first track
+  ifs_t0 = IFSClock::now();
   temp_cluster->dijkstra_shortest_paths(wcps.first,2); 
   temp_cluster->cal_shortest_path(wcps.second,2);
+  if (flag_timing) std::cout << "init_first_segment timing: do shortest path took " << std::chrono::duration_cast<IFSms>(IFSClock::now()-ifs_t0).count() << " ms" << std::endl;
 
   if (flag_print){
     const auto& path_wcps = temp_cluster->get_path_wcps();
@@ -472,19 +498,24 @@ WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster
   WCPPID::ProtoSegment *sg1=0;
   
   if (temp_cluster->get_path_wcps().size()>1){
+    ifs_t0 = IFSClock::now();
     v1 = new WCPPID::ProtoVertex(acc_vertex_id, wcps.first, temp_cluster->get_cluster_id()); acc_vertex_id++;
     v2 = new WCPPID::ProtoVertex(acc_vertex_id, wcps.second, temp_cluster->get_cluster_id()); acc_vertex_id++;
     sg1 = new WCPPID::ProtoSegment(acc_segment_id, temp_cluster->get_path_wcps(), temp_cluster->get_cluster_id()); acc_segment_id++;
     
     temp_cluster->collect_charge_trajectory(*ct_point_cloud);
+    if (flag_timing) std::cout << "init_first_segment timing: create segment and prepare data took " << std::chrono::duration_cast<IFSms>(IFSClock::now()-ifs_t0).count() << " ms" << std::endl;
     // fit dQ/dx and everything ...
 
     //std::cout << "haha " << std::endl;
     
+    ifs_t0 = IFSClock::now();
     temp_cluster->do_tracking(*ct_point_cloud, global_wc_map, flash_time*units::microsecond, true, true);
+    if (flag_timing) std::cout << "init_first_segment timing: do single_track fitting took " << std::chrono::duration_cast<IFSms>(IFSClock::now()-ifs_t0).count() << " ms" << std::endl;
 
     //    std::cout << "haha1 " << std::endl;
 
+    ifs_t0 = IFSClock::now();
     if (temp_cluster->get_fine_tracking_path().size()<=1){
       delete v1; delete v2; delete sg1;
       v1 = 0; v2 = 0; sg1 = 0;
@@ -495,6 +526,7 @@ WCPPID::ProtoSegment* WCPPID::NeutrinoID::init_first_segment(WCPPID::PR3DCluster
       add_proto_connection(v1,sg1,temp_cluster);
       add_proto_connection(v2,sg1,temp_cluster);
     }
+    if (flag_timing) std::cout << "init_first_segment timing: after fit assignment took " << std::chrono::duration_cast<IFSms>(IFSClock::now()-ifs_t0).count() << " ms" << std::endl;
     //    std::cout << temp_cluster->get_fine_tracking_path().size() << " " << temp_cluster->get_dx().size() << " " << temp_cluster->get_fine_tracking_path().front() << " " << temp_cluster->get_fine_tracking_path().back() << " " << v1->get_pw() << " " << wcps.first.index_w << std::endl;
   }
   //else{
@@ -1762,6 +1794,9 @@ std::tuple<WCPPID::ProtoVertex*, WCPPID::ProtoSegment*, WCP::Point> WCPPID::Neut
     for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
       if (it->first->get_cluster_id() != temp_cluster->get_cluster_id()) continue;
       std::pair<double, WCP::Point> results = it->first->get_closest_point(test_p);
+
+      // std::cout << "haha: " << results.first << " " << results.second << std::endl;
+
       if (results.first < sg_cut1){
 	PointVector& points = it->first->get_point_vec();
 

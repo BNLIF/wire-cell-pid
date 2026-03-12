@@ -5,6 +5,7 @@
 #include "TMatrixDEigen.h"
 #include "TVector3.h"
 #include "TH2F.h"
+#include <chrono>
 
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
@@ -30,6 +31,11 @@ using namespace WCP;
 #include "PR3DCluster_point_clustering.h"
 
 void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std::map<int,std::map<const GeomWire*, SMGCSelection > >& global_wc_map, double time, bool flag_dQ_dx_fit_reg, bool flag_dQ_dx_fit){
+  const bool flag_timing = true; // set to true to enable timing printouts
+  using DSClock = std::chrono::high_resolution_clock;
+  using DSms = std::chrono::duration<double, std::milli>;
+  auto ds_t0 = DSClock::now();
+
   fine_tracking_path.clear();
   dQ.clear();
   dx.clear();
@@ -50,7 +56,9 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   std::map<std::pair<int,int>,std::tuple<double,double, int> > map_2D_ut_charge;
   std::map<std::pair<int,int>,std::tuple<double,double, int> > map_2D_vt_charge;
   std::map<std::pair<int,int>,std::tuple<double,double, int> > map_2D_wt_charge;
+  ds_t0 = DSClock::now();
   prepare_data(ct_point_cloud, global_wc_map, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
+  if (flag_timing) std::cout << "do_single_tracking timing: prepare_data took " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
 
   //  for (auto it = map_2D_wt_charge.begin(); it!=map_2D_wt_charge.end(); it++){
   //  if (it->first.first + 4800 > 8256) std::cout << "abc " << it->first.first + 4800 << std::endl;
@@ -72,6 +80,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   double low_dis_limit = 1.2*units::cm;
   double end_point_limit = 0.6*units::cm;
   //std::cout << path_wcps.size() << std::endl;
+  ds_t0 = DSClock::now();
   PointVector pts = organize_wcps_path(ct_point_cloud, path_wcps,low_dis_limit, end_point_limit); 
   if (pts.size()==0) return;
   else if (pts.size()==1){
@@ -84,6 +93,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   }
  
   std::cout << "After organization " << pts.size() << std::endl;
+  if (flag_timing) std::cout << "do_single_tracking timing: organize path " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
 
 
   // for (size_t i=0;i+1!=pts.size();i++){
@@ -101,6 +111,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   std::map<std::pair<int,int>,std::set<int>> map_2DW_3D_set;
   
   if (flag_1st_tracking){
+    ds_t0 = DSClock::now();
     form_map(ct_point_cloud, pts,
 	     map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge,
 	     map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set,
@@ -114,6 +125,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     trajectory_fit(pts, map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set,
 		   map_2DU_3D_set, map_2DV_3D_set, map_2DW_3D_set,
 		   map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
+    if (flag_timing) std::cout << "do_single_tracking timing: 1st trajectory_fit took " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
   }
   
   // for (size_t i=0;i+1!=pts.size();i++){
@@ -141,7 +153,9 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
    
 
 
+    ds_t0 = DSClock::now();
     organize_ps_path(ct_point_cloud, pts, low_dis_limit, end_point_limit); 
+    if (flag_timing) std::cout << "do_single_tracking timing: organize path " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
     
     // std::cout << pts.size() << std::endl;
     //  for (size_t i = 0; i < pts.size(); ++i) {
@@ -156,6 +170,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     map_2DV_3D_set.clear();
     map_2DW_3D_set.clear();
     
+    ds_t0 = DSClock::now();
     form_map(ct_point_cloud, pts,
 	     map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge,
 	     map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set,
@@ -170,6 +185,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     trajectory_fit(pts, map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set,
 		   map_2DU_3D_set, map_2DV_3D_set, map_2DW_3D_set,
 		   map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge, 2, 0.6*units::cm);
+    if (flag_timing) std::cout << "do_single_tracking timing: 2nd trajectory_fit took " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
     
     //  std::cout << pts.back() << std::endl;
     
@@ -183,7 +199,9 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     
     // examine trajectory ... // no angle at the moment ...
     //std::cout << pts.size() << std::endl;
+    ds_t0 = DSClock::now();
     organize_ps_path(ct_point_cloud, pts, low_dis_limit, 0);
+    if (flag_timing) std::cout << "do_single_tracking timing: organize path " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
     //std::cout << pts.size() << std::endl;
     // std::cout << "dQ/dx fit " << pts.size() << std::endl;
   }
@@ -203,8 +221,12 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
   }
    //  std::cout << pts.size() << " " << pts.front() << " " << pts.back() << std::endl;
   
+  double ds_dt_organize_data = 0, ds_dt_dqdx = 0, ds_dt_fill = 0;
+
   if (flag_dQ_dx){
+    ds_t0 = DSClock::now();
     fine_tracking_path = pts;
+    ds_dt_organize_data = std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count();
     
     // std::cout << fine_tracking_path.size() << std::endl;
     // for (size_t i = 0; i < fine_tracking_path.size(); ++i) {
@@ -222,14 +244,24 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     //    std::cout << map_2D_ut_charge.size() << " " << map_2D_vt_charge.size() << " " << map_2D_wt_charge.size() << " " << pts.size() << std::endl;
     
     // first round of dQ/dx fit ...
+    ds_t0 = DSClock::now();
     dQ_dx_fit(global_wc_map, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge, time, end_point_limit, flag_dQ_dx_fit_reg);
+    ds_dt_dqdx = std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count();
     
     // std::vector<int> indices;
     // indices.push_back(86);
     // fill_data_map_trajectory(indices, map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set,  map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
   }else{
     // fill the data ...
+    ds_t0 = DSClock::now();
     dQ_dx_fill(end_point_limit);
+    ds_dt_fill = std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count();
+  }
+
+  if (flag_timing){
+    std::cout << "do_single_tracking timing: organize data " << ds_dt_organize_data << " ms" << std::endl;
+    std::cout << "do_single_tracking timing: dQ_dx fit/fill took " << ds_dt_dqdx << " ms" << std::endl;
+    std::cout << "do_single_tracking timing: fill data " << ds_dt_fill << " ms" << std::endl;
   }
 }
 

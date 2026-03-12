@@ -69,35 +69,35 @@ void WCPPID::Protect_Over_Clustering(double eventTime, std::vector<std::pair<int
 	  }
 	}
 
-	//	std::cout << second_max << " " << max_number_cells << " " << main_id << std::endl;
-	
-	if (second_max > 0.7 * max_number_cells){
-	  if (pl == 0 ) pl = new Photon_Library(eventTime, run_no,flag_match_data, false, flag_timestamp);
-	  std::pair<double, double> results = WCPPID::compare_pe_pattern(eventTime, run_no, offset_x, pl, vec_mcells.at(main_id), flash ,flag_match_data, flag_timestamp);
-	  double min_score = results.first;
-	  double min_ratio = results.second;
+	// //	std::cout << second_max << " " << max_number_cells << " " << main_id << std::endl;
+	// // select the main cluster according to the compare_pe_pattern  (comment temporarily)
+	// if (second_max > 0.7 * max_number_cells){
+	//   if (pl == 0 ) pl = new Photon_Library(eventTime, run_no,flag_match_data, false, flag_timestamp);
+	//   std::pair<double, double> results = WCPPID::compare_pe_pattern(eventTime, run_no, offset_x, pl, vec_mcells.at(main_id), flash ,flag_match_data, flag_timestamp);
+	//   double min_score = results.first;
+	//   double min_ratio = results.second;
 	  
-	  // second round of examination ...
-	  for (size_t j=0;j<vec_mcells.size();j++){
-	    if (vec_mcells.at(j).size() < 0.7 * max_number_cells || j==main_id) continue;
-	    results = WCPPID::compare_pe_pattern(eventTime, run_no, offset_x, pl, vec_mcells.at(j), flash ,flag_match_data, flag_timestamp);
-	    double score;
-	    if (fabs(1-results.second) > fabs(1-min_ratio)){
-	      score = sqrt(pow(results.first,2) + pow(results.second - min_ratio,2));
-	    }else{
-	      score = sqrt(pow(results.first,2));
-	    }
-	    //	    std::cout << score << " " <<  min_score << " " << results.first << " "<< results.second << " " << min_ratio << std::endl;
+	//   // second round of examination ...
+	//   for (size_t j=0;j<vec_mcells.size();j++){
+	//     if (vec_mcells.at(j).size() < 0.7 * max_number_cells || j==main_id) continue;
+	//     results = WCPPID::compare_pe_pattern(eventTime, run_no, offset_x, pl, vec_mcells.at(j), flash ,flag_match_data, flag_timestamp);
+	//     double score;
+	//     if (fabs(1-results.second) > fabs(1-min_ratio)){
+	//       score = sqrt(pow(results.first,2) + pow(results.second - min_ratio,2));
+	//     }else{
+	//       score = sqrt(pow(results.first,2));
+	//     }
+	//     //	    std::cout << score << " " <<  min_score << " " << results.first << " "<< results.second << " " << min_ratio << std::endl;
 	    
-	    if (score < min_score){
-	      min_score = score;
-	      main_id = j;
-	      max_number_cells = vec_mcells.at(j).size();
-	    }
-	  }
+	//     if (score < min_score){
+	//       min_score = score;
+	//       main_id = j;
+	//       max_number_cells = vec_mcells.at(j).size();
+	//     }
+	//   }
 
-	  //	  std::cout << main_id << " " << max_number_cells << std::endl;
-	}
+	//   //	  std::cout << main_id << " " << max_number_cells << std::endl;
+	// }
 	
 	
 	// main cluster replacement 

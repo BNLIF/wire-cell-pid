@@ -1360,6 +1360,14 @@ int main(int argc, char* argv[])
   	additional_clusters.push_back(*it1);
     }
 
+    // print out 
+    std::cout << "Main Cluster: " << main_cluster->get_cluster_id() << " " << main_cluster->get_mcells().size() << std::endl;
+    std::cout << "Additional Clusters: " << additional_clusters.size() << std::endl;
+    for (size_t i=0; i!=additional_clusters.size();i++){
+      std::cout << "Additional Cluster " << i << ": " << additional_clusters.at(i)->get_cluster_id() << " " << additional_clusters.at(i)->get_mcells().size() << std::endl;
+    }
+
+
     double offset_x =     (flash_time - time_offset)*2./nrebin*time_slice_width;
     WCPPID::NeutrinoID *neutrino = new WCPPID::NeutrinoID(main_cluster, additional_clusters, live_clusters, fid, gds, nrebin, frame_length, unit_dis, &ct_point_cloud, global_wc_map, flash_time, offset_x, flag_neutrino_id_process, flag_bdt, flag_dl_vtx, dl_vtx_cut, match_isFC, true, std::set<std::string>(debug_func_names.begin(), debug_func_names.end()));
     neutrino->set_save_ssmsp(flag_ssmsp);
@@ -2973,6 +2981,7 @@ int main(int argc, char* argv[])
       WCPPID::Map_Proto_Vertex_Segments& map_vertex_segments = neutrino_vec.at(i)->get_map_vertex_segments();
       WCPPID::ProtoVertex *nu_vtx =  neutrino_vec.at(i)->get_main_vertex();
 
+      if (nu_vtx == nullptr) continue;  // TEMP: guard against null main vertex while NeutrinoID features are disabled
       auto it1 = map_vertex_segments.find(nu_vtx);
       Point vertex_point;
       if (it1 != map_vertex_segments.end() && it1->second.size()>0){
