@@ -39,7 +39,10 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
 
   // for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
   //   WCPPID::ProtoSegment *seg = it->first;
-  //   std::cout << seg->get_point_vec().size() << " " ;
+  //   std::cout << seg->get_point_vec().size() << " " << std::endl;
+  //   for (auto p : seg->get_point_vec()){
+  //     std::cout << p << " " << std::endl;
+  //   }
   // }
   // std::cout << std::endl;
 
@@ -424,7 +427,7 @@ WCP::PointVector WCPPID::PR3DCluster::examine_trajectory(WCP::PointVector& final
   for (size_t i=0; i!=final_ps_vec.size(); i++){
     Point p = final_ps_vec.at(i);
     bool flag_skip = skip_trajectory_point(p, i, init_indices.at(i), init_ps_vec, map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge, result_ps, offset_t, slope_x,  offset_u,  slope_yu,  slope_zu,  offset_v,  slope_yv,  slope_zv,  offset_w, slope_yw,  slope_zw);
-    //  std::cout << i << " " << p << " " << init_ps_vec.size() << " " << init_ps_vec.at(i) << " " << flag_skip << " " << result_ps.size() << std::endl;
+    //  std::cout << i << " Skip " << p << " " << init_ps_vec.size() << " " << init_ps_vec.at(i) << " " << flag_skip << " " << result_ps.size() << std::endl;
     // vertex not moving ...
     if (i == 0 || i+1 == final_ps_vec.size()) flag_skip = false;
     // protection ...
@@ -604,6 +607,7 @@ Point WCPPID::PR3DCluster::fit_point(Point& init_p, int i, std::map<int, std::pa
     }
     index ++;
   }
+  // std::cout << "U plane " << index << " " << std::endl;
 
   index = 0;
   for (auto it = map_3D_2DV_set[i].first.begin(); it!=map_3D_2DV_set[i].first.end(); it++){
@@ -639,7 +643,7 @@ Point WCPPID::PR3DCluster::fit_point(Point& init_p, int i, std::map<int, std::pa
     }
     index ++;
   }
-
+  // std::cout << "V plane " << index << " " << std::endl;
   index = 0;
   for (auto it = map_3D_2DW_set[i].first.begin(); it!=map_3D_2DW_set[i].first.end(); it++){
     double charge, charge_err;
@@ -673,7 +677,8 @@ Point WCPPID::PR3DCluster::fit_point(Point& init_p, int i, std::map<int, std::pa
     }
     index ++;
   }
-  
+  // std::cout << "W plane " << index << " " << std::endl;
+
 
   Point final_p;
   

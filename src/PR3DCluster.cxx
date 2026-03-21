@@ -31,7 +31,7 @@ using namespace WCP;
 #include "PR3DCluster_point_clustering.h"
 
 void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std::map<int,std::map<const GeomWire*, SMGCSelection > >& global_wc_map, double time, bool flag_dQ_dx_fit_reg, bool flag_dQ_dx_fit){
-  const bool flag_timing = true; // set to true to enable timing printouts
+  const bool flag_timing = false; // set to true to enable timing printouts
   using DSClock = std::chrono::high_resolution_clock;
   using DSms = std::chrono::duration<double, std::milli>;
   auto ds_t0 = DSClock::now();
@@ -92,7 +92,7 @@ void WCPPID::PR3DCluster::do_tracking(WCP::ToyCTPointCloud& ct_point_cloud, std:
     }
   }
  
-  std::cout << "After organization " << pts.size() << std::endl;
+  // std::cout << "After organization " << pts.size() << std::endl;
   if (flag_timing) std::cout << "do_single_tracking timing: organize path " << std::chrono::duration_cast<DSms>(DSClock::now()-ds_t0).count() << " ms" << std::endl;
 
 

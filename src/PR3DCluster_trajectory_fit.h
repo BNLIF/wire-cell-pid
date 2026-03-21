@@ -775,7 +775,7 @@ bool WCPPID::PR3DCluster::skip_trajectory_point(WCP::Point& p, int i, int index,
     /* if (i==10) */
     /*   std::cout << i << " " << angle << " " << angle1 << " " << ps_vec.size() << " " << v2.Mag() << " " << map_3D_2DU_set[index].second << " " << map_3D_2DV_set[index].second << " " << map_3D_2DW_set[index].second << std::endl; */
 
-    // std::cout << "Inside: " << angle << " " << angle1 << " " << 0 << " " << v2.Mag() << std::endl;
+    // std::cout << "Inside: " << angle << " " << angle1 << " " << (map_3D_2DU_set[index].second) << " " <<  (map_3D_2DV_set[index].second)  << " " << (map_3D_2DW_set[index].second) << " " << v2.Mag() << std::endl;
     
     // related to the dead channels
     if (angle > 45 && ((map_3D_2DU_set[index].second==0 && map_3D_2DV_set[index].second==0) ||
