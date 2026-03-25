@@ -96,15 +96,18 @@ void WCPPID::NeutrinoID::improve_vertex(WCPPID::PR3DCluster* temp_cluster, bool 
 
    
     
+    std::cout << "[improve_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Fitting vertex id=" << vtx->get_id() << " at " << vtx->get_fit_pt() << " with " << it->second.size() << " segments" << std::endl;
     bool flag_update = fit_vertex(vtx, it->second, temp_cluster);
     if (flag_update) fitted_vertices.insert(vtx);
     if (flag_update) {
       flag_update_fit = true;
+      std::cout << "[improve_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Vertex id=" << vtx->get_id() << " updated -> " << vtx->get_fit_pt() << std::endl;
 
       double tmp_dis = sqrt(pow(wcp_save.x - vtx->get_wcpt().x,2)+pow(wcp_save.y - vtx->get_wcpt().y,2)+pow(wcp_save.z - vtx->get_wcpt().z,2));
-     
+
       if (tmp_dis > 0.5*units::cm){// if the vertex is moving far, refit ...
 	temp_cluster->do_multi_tracking(map_vertex_segments, map_segment_vertices, *ct_point_cloud, global_wc_map, flash_time*units::microsecond, true, true, true);
+	std::cout << "[improve_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Vertex id=" << vtx->get_id() << " moved " << tmp_dis/units::cm << " cm, refitting" << std::endl;
 	fit_vertex(vtx, map_vertex_segments[vtx], temp_cluster);
       }
       
@@ -205,9 +208,13 @@ void WCPPID::NeutrinoID::improve_vertex(WCPPID::PR3DCluster* temp_cluster, bool 
       flag_update_fit = false;
       // redo the fit ...
       for (auto it = refit_vertices.begin(); it!= refit_vertices.end(); it++){
+	std::cout << "[improve_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Re-fitting vertex id=" << (*it)->get_id() << " at " << (*it)->get_fit_pt() << " (2nd pass, " << map_vertex_segments[*it].size() << " segments)" << std::endl;
 	bool flag_update = fit_vertex(*it, map_vertex_segments[*it], temp_cluster);
 	if (flag_update)   fitted_vertices.insert(*it);
-	if (flag_update)   flag_update_fit = true;
+	if (flag_update){
+	  flag_update_fit = true;
+	  std::cout << "[improve_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Vertex id=" << (*it)->get_id() << " updated (2nd pass) -> " << (*it)->get_fit_pt() << std::endl;
+	}
       }
       if (flag_update_fit)     temp_cluster->do_multi_tracking(map_vertex_segments, map_segment_vertices, *ct_point_cloud, global_wc_map, flash_time*units::microsecond, true, true, true);
           
@@ -1190,7 +1197,7 @@ bool WCPPID::NeutrinoID::search_for_vertex_activities(WCPPID::ProtoVertex *vtx, 
       wcp_list.push_back(max_wcp);
 
     if (wcp_list.size()>1){
-      std::cout << "Cluster: " << temp_cluster->get_cluster_id() << " Vertex Activity Found" << " " << tmp_p << " " << acc_segment_id << " " << wcp_list.size() << " " << v1->get_wcpt().index << " " << vtx->get_wcpt().index << std::endl;
+      std::cout << "[search_for_vertex_activities] Cluster: " << temp_cluster->get_cluster_id() << " Vertex Activity Found at " << tmp_p << ", new seg id=" << acc_segment_id << ", wcp_list size=" << wcp_list.size() << ", new vtx wcp=" << v1->get_wcpt().index << ", src vtx wcp=" << vtx->get_wcpt().index << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
       WCPPID::ProtoSegment* sg1 = new WCPPID::ProtoSegment(acc_segment_id, wcp_list, temp_cluster->get_cluster_id()); acc_segment_id++;
       add_proto_connection(v1,sg1,temp_cluster);
       add_proto_connection(vtx,sg1,temp_cluster);

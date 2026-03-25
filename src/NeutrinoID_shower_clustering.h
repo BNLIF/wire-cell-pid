@@ -13,8 +13,13 @@ bool sortbydis(const cluster_point_info &a, const cluster_point_info &b){
 
 
 void WCPPID::NeutrinoID::shower_determing_in_main_cluster(WCPPID::PR3DCluster *temp_cluster){
+  const bool flag_timing = true;
+  using SDMC_Clock = std::chrono::high_resolution_clock;
+  using SDMC_ms = std::chrono::duration<double, std::milli>;
+  auto sdmc_t_total = SDMC_Clock::now();
+  auto sdmc_t0 = SDMC_Clock::now();
 
-  //hack for now 
+  //hack for now
   /* for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){ */
   /*   WCPPID::ProtoSegment *sg = it->first; */
   /*   if (sg->get_cluster_id() != main_cluster->get_cluster_id()) continue; */
@@ -28,50 +33,74 @@ void WCPPID::NeutrinoID::shower_determing_in_main_cluster(WCPPID::PR3DCluster *t
   /* } */
 
   examine_good_tracks(temp_cluster->get_cluster_id());
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: examine_good_tracks took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
 
-  
   // if multiple tracks in, make them undetermined ...
+  sdmc_t0 = SDMC_Clock::now();
   fix_maps_multiple_tracks_in(temp_cluster->get_cluster_id());
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: fix_maps_multiple_tracks_in took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
+
   // if one shower in and a good track out, reverse the shower ..
+  sdmc_t0 = SDMC_Clock::now();
   fix_maps_shower_in_track_out(temp_cluster->get_cluster_id());
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: fix_maps_shower_in_track_out (1st) took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
 
   // if there is one good track in, turn everything else to out
+  sdmc_t0 = SDMC_Clock::now();
   improve_maps_one_in(temp_cluster); // one in and many out ...
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: improve_maps_one_in took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
   //  print_segs_info(temp_cluster->get_cluster_id());
   // if one shower in and a track out, change the track to shower
+  sdmc_t0 = SDMC_Clock::now();
   improve_maps_shower_in_track_out(temp_cluster->get_cluster_id()); // use shower information to determine the rest ...
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: improve_maps_shower_in_track_out (1st) took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
   //  print_segs_info(temp_cluster->get_cluster_id());
-  
+
   // help to change tracks around shower to showers
+  sdmc_t0 = SDMC_Clock::now();
   improve_maps_no_dir_tracks(temp_cluster->get_cluster_id());
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: improve_maps_no_dir_tracks took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
   //print_segs_info(temp_cluster->get_cluster_id());
-  
+
   // if one shower in and a track out, change the track to shower
+  sdmc_t0 = SDMC_Clock::now();
   improve_maps_shower_in_track_out(temp_cluster->get_cluster_id(), false); // use shower information to determine the rest ...
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: improve_maps_shower_in_track_out (2nd) took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
 
-  
+
   // if multiple tracks in, change track to shower
+  sdmc_t0 = SDMC_Clock::now();
   improve_maps_multiple_tracks_in(temp_cluster->get_cluster_id());
-  
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: improve_maps_multiple_tracks_in took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
+
   //  print_segs_info(temp_cluster->get_cluster_id());
 
   // if one shower in and a good track out, reverse the shower ..
+  sdmc_t0 = SDMC_Clock::now();
   fix_maps_shower_in_track_out(temp_cluster->get_cluster_id());
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: fix_maps_shower_in_track_out (2nd) took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
   // judgement ...
+  sdmc_t0 = SDMC_Clock::now();
   judge_no_dir_tracks_close_to_showers(temp_cluster->get_cluster_id());
-  
-  // examine map ...
-  examine_maps(temp_cluster);
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: judge_no_dir_tracks_close_to_showers took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
 
+  // examine map ...
+  sdmc_t0 = SDMC_Clock::now();
+  examine_maps(temp_cluster);
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: examine_maps took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
+
+  sdmc_t0 = SDMC_Clock::now();
   examine_all_showers(temp_cluster);
-  
-  
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: examine_all_showers took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t0).count() << " ms" << std::endl;
+
+  if (flag_timing) std::cout << "shower_determing_in_main_cluster timing: TOTAL took " << std::chrono::duration_cast<SDMC_ms>(SDMC_Clock::now()-sdmc_t_total).count() << " ms" << std::endl;
+
   /* print_segs_info(main_cluster->get_cluster_id()); */
   /* std::cout << std::endl << std::endl; */
   /* for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){ */
@@ -79,7 +108,7 @@ void WCPPID::NeutrinoID::shower_determing_in_main_cluster(WCPPID::PR3DCluster *t
   /*   if (sg->get_particle_4mom(3) > sg->get_particle_mass() && (!sg->get_flag_shower())) */
   /*     std::cout << sg->get_id() << " " << sg->get_length()/units::cm << " Track  "  << sg->get_flag_dir() << " " << sg->get_particle_type() << " " << sg->get_particle_mass()/units::MeV << " " << (sg->get_particle_4mom(3)-sg->get_particle_mass())/units::MeV << " " << sg->is_dir_weak() << std::endl; */
   /* } */
-  
+
 }
 
 void WCPPID::NeutrinoID::shower_clustering_connecting_to_main_vertex(){

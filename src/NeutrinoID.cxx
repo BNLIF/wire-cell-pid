@@ -74,6 +74,11 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
   //   }
   // }
   // form id vs. cluster ...
+  const bool flag_timing_csg = true;
+  using CSGClock = std::chrono::high_resolution_clock;
+  using CSGms = std::chrono::duration<double, std::milli>;
+  auto csg_t_total = CSGClock::now();
+  auto csg_t0 = CSGClock::now();
 
   map_id_cluster[main_cluster->get_cluster_id()] = main_cluster;
   main_cluster->create_steiner_graph(*ct_point_cloud, gds, nrebin, frame_length, unit_dis);
@@ -81,19 +86,23 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
       std::pair<WCP::WCPointCloud<double>::WCPoint,WCP::WCPointCloud<double>::WCPoint> two_wcps = main_cluster->get_two_boundary_wcps();
       map_cluster_length[main_cluster] = sqrt(pow(two_wcps.first.x - two_wcps.second.x, 2) + pow(two_wcps.first.y - two_wcps.second.y, 2) + pow(two_wcps.first.z - two_wcps.second.z, 2));
   }
+  if (flag_timing_csg) std::cout << "create_steiner_graph timing: main_cluster took " << std::chrono::duration_cast<CSGms>(CSGClock::now()-csg_t0).count() << " ms" << std::endl;
 
 
   if (flag_other_clusters){
     for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
+      csg_t0 = CSGClock::now();
       map_id_cluster[(*it)->get_cluster_id()] = *it;
       (*it)->create_steiner_graph(*ct_point_cloud, gds, nrebin, frame_length, unit_dis);
       std::pair<WCP::WCPointCloud<double>::WCPoint,WCP::WCPointCloud<double>::WCPoint> two_wcps = (*it)->get_two_boundary_wcps();
       double length = sqrt(pow(two_wcps.first.x - two_wcps.second.x, 2) + pow(two_wcps.first.y - two_wcps.second.y, 2) + pow(two_wcps.first.z - two_wcps.second.z, 2));
       map_cluster_length[*it] = length;
+      if (flag_timing_csg) std::cout << "create_steiner_graph timing: other_cluster id=" << (*it)->get_cluster_id() << " took " << std::chrono::duration_cast<CSGms>(CSGClock::now()-csg_t0).count() << " ms" << std::endl;
 
     //      std::cout << (*it)->get_cluster_id() << " " << length/units::cm << std::endl;
     }
   }
+  if (flag_timing_csg) std::cout << "create_steiner_graph timing: TOTAL took " << std::chrono::duration_cast<CSGms>(CSGClock::now()-csg_t_total).count() << " ms" << std::endl;
 
   if (is_neutrino_candidate){
     
@@ -125,67 +134,66 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
       find_proto_vertex(main_cluster, true, 2);
 
     
-      // // deal with shower ...
-      // clustering_points(main_cluster);
-      // separate_track_shower(main_cluster);
-      // determine_direction(main_cluster);
+      // deal with shower ...
+      clustering_points(main_cluster);
+      separate_track_shower(main_cluster);
 
-    
-      // shower_determing_in_main_cluster(main_cluster);
-      // determine_main_vertex(main_cluster);
-      // //improve_vertex(main_cluster, false); // do not search for vertex activities ...
+      determine_direction(main_cluster);
+
+      shower_determing_in_main_cluster(main_cluster);
+      determine_main_vertex(main_cluster);
+      //improve_vertex(main_cluster, false); // do not search for vertex activities ...
 
    
-      // if (main_vertex !=0){
-      //   map_cluster_main_vertices[main_cluster] = main_vertex;
-      //   main_vertex = 0;
-      // }
+      if (main_vertex !=0){
+        map_cluster_main_vertices[main_cluster] = main_vertex;
+        main_vertex = 0;
+      }
     
     }
 
   
-    // // loop over other clusters ...
-    //  if (flag_other_clusters){
-    //   for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
-    //     //if (skip_clusters.find(*it) != skip_clusters.end()) continue;
-    //     //if ((*it)->get_cluster_id()!=75) continue;
-    //     //std::cout << (*it)->get_cluster_id() << " " << map_cluster_length[*it]/units::cm << std::endl;
+    // loop over other clusters ...
+    if (flag_other_clusters){
+      for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
+        //if (skip_clusters.find(*it) != skip_clusters.end()) continue;
+        //if ((*it)->get_cluster_id()!=75) continue;
+        //std::cout << (*it)->get_cluster_id() << " " << map_cluster_length[*it]/units::cm << std::endl;
       
-    //     if (map_cluster_length[*it] > 6*units::cm){
-    //     //if (map_cluster_length[*it] > 4*units::cm){
-	  //     // find the proto vertex ...
-	  //       find_proto_vertex(*it, true, 2);
-	  //       // deal with shower ...
-	  //       clustering_points(*it);
-    //       separate_track_shower(*it);
-    //       determine_direction(*it);    
-    //       shower_determing_in_main_cluster(*it);
-    //       determine_main_vertex(*it, false);
-    //       //improve_vertex(main_cluster, false); // do not search for vertex activity
+        if (map_cluster_length[*it] > 6*units::cm){
+        //if (map_cluster_length[*it] > 4*units::cm){
+	      // find the proto vertex ...
+	        find_proto_vertex(*it, true, 2);
+	        // deal with shower ...
+	        clustering_points(*it);
+          separate_track_shower(*it);
+          determine_direction(*it);    
+          shower_determing_in_main_cluster(*it);
+          determine_main_vertex(*it, false);
+          //improve_vertex(main_cluster, false); // do not search for vertex activity
           
-    //       if (main_vertex !=0){
-    //         map_cluster_main_vertices[*it] = main_vertex;
-    //         main_vertex = 0;
-    //       }
-    //    }else{
-    //     if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
+          if (main_vertex !=0){
+            map_cluster_main_vertices[*it] = main_vertex;
+            main_vertex = 0;
+          }
+       }else{
+        if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
 
-        
-    //     clustering_points(*it);
-    //     separate_track_shower(*it);
-    //     determine_direction(*it);
-    //     shower_determing_in_main_cluster(*it);
-    //     determine_main_vertex(*it, false);
-    //     if (main_vertex !=0){
-    //       map_cluster_main_vertices[*it] = main_vertex;
-    //       main_vertex = 0;
-    //     }
-    //   }
+        clustering_points(*it);
+        separate_track_shower(*it);
+        determine_direction(*it);
+        shower_determing_in_main_cluster(*it);
+        determine_main_vertex(*it, false);
+        if (main_vertex !=0){
+          map_cluster_main_vertices[*it] = main_vertex;
+          main_vertex = 0;
+        }
+      }
     
-    //   }
-    //   //  deghost ...
-    //   deghosting();
-    // }
+    }
+      //  deghost ...
+    deghosting();
+  }
  
   
     // if (flag_main_cluster){
@@ -563,6 +571,7 @@ void WCPPID::NeutrinoID::examine_main_vertices(WCPPID::ProtoVertexSelection& ver
 	}
 	if (!flag_skip) tmp_vertices.insert(vtx);
 	else{
+	  std::cout << "[examine_main_vertices] Cluster: " << vtx->get_cluster_id() << " Remove back-to-back vertex id=" << vtx->get_id() << " at " << vtx->get_fit_pt() << " from candidates -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 	  // change direction ...
 	  for (auto it1 = used_segments.begin(); it1!=used_segments.end(); it1++){
 	    WCPPID::ProtoSegment *sg1 = *it1;
@@ -605,6 +614,7 @@ void WCPPID::NeutrinoID::examine_main_vertices(WCPPID::ProtoVertexSelection& ver
   
   
   if (tmp_vertices.size()==0) return;
+  std::cout << "[examine_main_vertices] Cluster: " << vertices.front()->get_cluster_id() << " Candidates: " << vertices.size() << " -> " << tmp_vertices.size() << std::endl;
   vertices.clear();
   vertices.resize(tmp_vertices.size());
   std::copy(tmp_vertices.begin(), tmp_vertices.end(), vertices.begin());
@@ -973,8 +983,16 @@ void WCPPID::NeutrinoID::fill_fit_parameters(){
 }
 
 void WCPPID::NeutrinoID::clustering_points(WCPPID::PR3DCluster* temp_cluster){
-  temp_cluster->clustering_points_master(map_vertex_segments, map_segment_vertices, *ct_point_cloud);
+  const bool flag_timing = true;
+  using CP_Clock = std::chrono::high_resolution_clock;
+  using CP_ms = std::chrono::duration<double, std::milli>;
+  auto cp_t_total = CP_Clock::now();
+  auto cp_t0 = CP_Clock::now();
 
+  temp_cluster->clustering_points_master(map_vertex_segments, map_segment_vertices, *ct_point_cloud);
+  if (flag_timing) std::cout << "clustering_points timing: clustering_points_master took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t0).count() << " ms" << std::endl;
+
+  cp_t0 = CP_Clock::now();
   std::map<int, WCPPID::ProtoSegment*> map_id_seg;
   std::map<WCPPID::ProtoSegment*, int> map_seg_id;
   for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
@@ -985,17 +1003,19 @@ void WCPPID::NeutrinoID::clustering_points(WCPPID::PR3DCluster* temp_cluster){
     // std::cout << "A: " << sg->get_id() << std::endl;
     sg->reset_associate_points();
   }
+  if (flag_timing) std::cout << "clustering_points timing: build map and reset associate points took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t0).count() << " ms" << std::endl;
 
+  cp_t0 = CP_Clock::now();
   {
     // find the relevant point clouds ...
     WCP::WCPointCloud<double>& cloud = temp_cluster->get_point_cloud()->get_cloud();
     WCP::WC2DPointCloud<double>& cloud_u = temp_cluster->get_point_cloud()->get_cloud_u();
     WCP::WC2DPointCloud<double>& cloud_v = temp_cluster->get_point_cloud()->get_cloud_v();
     WCP::WC2DPointCloud<double>& cloud_w = temp_cluster->get_point_cloud()->get_cloud_w();
-    
+
     std::vector<int>& point_sub_cluster_ids = temp_cluster->get_point_sub_cluster_ids();
 
-    
+
     for (size_t i=0;i!=point_sub_cluster_ids.size();i++){
       //      std::cout << point_sub_cluster_ids.at(i) << std::endl;
       if (point_sub_cluster_ids.at(i) == -1) continue;
@@ -1003,7 +1023,9 @@ void WCPPID::NeutrinoID::clustering_points(WCPPID::PR3DCluster* temp_cluster){
       map_id_seg[point_sub_cluster_ids.at(i)]->add_associate_point(cloud.pts[i], cloud_u.pts[i], cloud_v.pts[i], cloud_w.pts[i]);
     }
   }
+  if (flag_timing) std::cout << "clustering_points timing: assign points from point cloud took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t0).count() << " ms" << std::endl;
 
+  cp_t0 = CP_Clock::now();
   {
     WCP::WCPointCloud<double>& cloud = temp_cluster->get_point_cloud_steiner()->get_cloud();
     std::vector<int>& point_steiner_sub_cluster_ids = temp_cluster->get_point_steiner_sub_cluster_ids();
@@ -1013,8 +1035,9 @@ void WCPPID::NeutrinoID::clustering_points(WCPPID::PR3DCluster* temp_cluster){
       map_id_seg[point_steiner_sub_cluster_ids.at(i)]->add_associate_point_steiner(cloud.pts[i]);
     }
   }
-  
+  if (flag_timing) std::cout << "clustering_points timing: assign steiner points took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t0).count() << " ms" << std::endl;
 
+  cp_t0 = CP_Clock::now();
   // build kdtree
   for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
     WCPPID::ProtoSegment *sg = it->first;
@@ -1024,7 +1047,9 @@ void WCPPID::NeutrinoID::clustering_points(WCPPID::PR3DCluster* temp_cluster){
     ToyPointCloud *pcloud_associate_steiner = sg->get_associated_pcloud_steiner();
     if (pcloud_associate_steiner !=0) pcloud_associate_steiner->build_kdtree_index();
   }
-  
+  if (flag_timing) std::cout << "clustering_points timing: build kdtree took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t0).count() << " ms" << std::endl;
+  if (flag_timing) std::cout << "clustering_points timing: TOTAL took " << std::chrono::duration_cast<CP_ms>(CP_Clock::now()-cp_t_total).count() << " ms" << std::endl;
+
 }
 
 

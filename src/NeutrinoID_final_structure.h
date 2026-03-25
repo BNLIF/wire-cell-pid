@@ -99,7 +99,7 @@ it++){
 	  //	  std::cout << temp_cluster->get_cluster_id() << " " << flag_update << " " << map_vertex_segments[main_vertex].size() << " " << map_vertex_segments[vtx1].size() << " " << dis/units::cm << " " << vtx1->get_id() << " " << main_vertex->get_id() << std::endl;
 	  
 	  if (flag_update){
-	    std::cout << "Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge main_vertex " << main_vertex->get_id() << " " << main_vertex->get_fit_pt() << " " << vtx1->get_id() <<  " " << vtx1->get_fit_pt() << std::endl;
+	    std::cout << "[examine_structure_final_3] Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge main_vertex " << main_vertex->get_id() << " " << main_vertex->get_fit_pt() << " into vtx " << vtx1->get_id() <<  " " << vtx1->get_fit_pt() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 	    
 	    for (auto it1 = map_vertex_segments[main_vertex].begin(); it1 != map_vertex_segments[main_vertex].end(); it1++) { 
               WCPPID::ProtoSegment *sg1 = *it1;
@@ -303,7 +303,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_2(WCPPID::PR3DCluster* temp_clu
 
 	  
 	  if (flag_update){
-	    std::cout << "Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge vertex to main vertex " << vtx1->get_id() << " " << vtx1->get_fit_pt() << " " << main_vertex->get_id()  << " " << main_vertex->get_fit_pt() << std::endl;
+	    std::cout << "[examine_structure_final_2] Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge vertex " << vtx1->get_id() << " " << vtx1->get_fit_pt() << " to main_vertex " << main_vertex->get_id()  << " " << main_vertex->get_fit_pt() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 	    for (auto it1 = map_vertex_segments[vtx1].begin(); it1 != map_vertex_segments[vtx1].end(); it1++){
 	      WCPPID::ProtoSegment *sg1 = *it1;
 	      if (sg1 == sg) continue;
@@ -464,6 +464,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_1p(WCPPID::PR3DCluster* temp_cl
 
       //      std::cout << main_vertex->get_wcpt().index << " A " << vtx->get_wcpt().index << std::endl;
       
+      std::cout << "[examine_structure_final_1p] Cluster: " << temp_cluster->get_cluster_id() << " Merge short sg " << sg1->get_id() << " (len=" << length1/units::cm << "cm) into sg " << sg2->get_id() << " (len=" << length2/units::cm << "cm), angle=" << angle << " deg, remove vtx " << vtx->get_id() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
       for (auto it1 = map_vertex_segments[vtx].begin(); it1 != map_vertex_segments[vtx].end(); it1++){
 	if ((*it1) == sg1) continue;
 	add_proto_connection(main_vertex,*it1,temp_cluster);
@@ -472,7 +473,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_1p(WCPPID::PR3DCluster* temp_cl
       del_proto_vertex(vtx);
 
       flag_update =true;
-      
+
     }else if (length2 < 6*units::cm && length2 < length1){
       
       WCPPID::ProtoVertex *vtx = find_other_vertex(sg2, main_vertex);
@@ -520,7 +521,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_1p(WCPPID::PR3DCluster* temp_cl
       
 
       //      std::cout << main_vertex->get_wcpt().index << " B " << vtx->get_wcpt().index << std::endl;
-      
+      std::cout << "[examine_structure_final_1p] Cluster: " << temp_cluster->get_cluster_id() << " Merge short sg " << sg2->get_id() << " (len=" << length2/units::cm << "cm) into sg " << sg1->get_id() << " (len=" << length1/units::cm << "cm), angle=" << angle << " deg, remove vtx " << vtx->get_id() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
       for (auto it1 = map_vertex_segments[vtx].begin(); it1 != map_vertex_segments[vtx].end(); it1++){
 	if ((*it1) == sg2) continue;
 	add_proto_connection(main_vertex,*it1,temp_cluster);
@@ -560,6 +561,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_1(WCPPID::PR3DCluster* temp_clu
 
       if (sg1->get_wcpt_vec().front().index == sg2->get_wcpt_vec().front().index && sg1->get_wcpt_vec().back().index == sg2->get_wcpt_vec().back().index
 	  || sg1->get_wcpt_vec().front().index == sg2->get_wcpt_vec().back().index && sg1->get_wcpt_vec().back().index == sg2->get_wcpt_vec().front().index){
+	std::cout << "[examine_structure_final_1] Cluster: " << temp_cluster->get_cluster_id() << " Remove duplicate segment " << sg2->get_id() << " (same path as " << sg1->get_id() << ") at vtx " << vtx->get_id() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 	del_proto_segment(sg2);
 	flag_update = true;
 	flag_continue = true;
@@ -596,7 +598,7 @@ bool WCPPID::NeutrinoID::examine_structure_final_1(WCPPID::PR3DCluster* temp_clu
 	
 	if (flag_replace){
 	  // form a new segment
-	  std::cout << "Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge two short segments: " << sg1->get_id() << " " << sg2->get_id() << " with a straight one, vtx id "  << vtx->get_id() << std::endl;
+	  std::cout << "[examine_structure_final_1] Cluster: " << temp_cluster->get_cluster_id() << " Final stage merge two short segments: " << sg1->get_id() << " (len=" << length1/units::cm << "cm) + " << sg2->get_id() << " (len=" << length2/units::cm << "cm) with a straight one, vtx id " << vtx->get_id() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 	  
 	  WCP::ToyPointCloud* pcloud_steiner = temp_cluster->get_point_cloud_steiner();
 	  std::list<WCP::WCPointCloud<double>::WCPoint > wcps;

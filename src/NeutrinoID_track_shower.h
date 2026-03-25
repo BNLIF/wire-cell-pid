@@ -1,11 +1,28 @@
 void WCPPID::NeutrinoID::separate_track_shower(WCPPID::PR3DCluster* temp_cluster){
+  const bool flag_timing = true;
+  using STS_Clock = std::chrono::high_resolution_clock;
+  using STS_ms = std::chrono::duration<double, std::milli>;
+  auto sts_t_total = STS_Clock::now();
+  auto sts_t0 = STS_Clock::now();
+
+  STS_ms t_shower_topology{0}, t_shower_trajectory{0};
   for (auto it = map_segment_vertices.begin(); it != map_segment_vertices.end(); it++){
     WCPPID::ProtoSegment *sg = it->first;
     if (sg->get_cluster_id() != temp_cluster->get_cluster_id()) continue;
-   
+
+    sts_t0 = STS_Clock::now();
     sg->is_shower_topology();
-    if (!sg->get_flag_shower_topology())      sg->is_shower_trajectory();
+    t_shower_topology += std::chrono::duration_cast<STS_ms>(STS_Clock::now()-sts_t0);
+
+    if (!sg->get_flag_shower_topology()){
+      sts_t0 = STS_Clock::now();
+      sg->is_shower_trajectory();
+      t_shower_trajectory += std::chrono::duration_cast<STS_ms>(STS_Clock::now()-sts_t0);
+    }
   }
+  if (flag_timing) std::cout << "separate_track_shower timing: is_shower_topology took " << t_shower_topology.count() << " ms" << std::endl;
+  if (flag_timing) std::cout << "separate_track_shower timing: is_shower_trajectory took " << t_shower_trajectory.count() << " ms" << std::endl;
+  if (flag_timing) std::cout << "separate_track_shower timing: TOTAL took " << std::chrono::duration_cast<STS_ms>(STS_Clock::now()-sts_t_total).count() << " ms" << std::endl;
 }
 
 void WCPPID::NeutrinoID::separate_track_shower(){
@@ -1230,6 +1247,13 @@ void WCPPID::NeutrinoID::examine_all_showers(WCPPID::PR3DCluster* temp_cluster){
 
 
 void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster, bool flag_print){
+  const bool flag_timing = true;
+  using DMV_Clock = std::chrono::high_resolution_clock;
+  using DMV_ms = std::chrono::duration<double, std::milli>;
+  auto dmv_t_total = DMV_Clock::now();
+  auto dmv_t0 = DMV_Clock::now();
+  std::cout << "[determine_main_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Start -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
+
   // update directions ...
   // improve_maps_one_in(temp_cluster);
   // examination ...
@@ -1239,7 +1263,7 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
   //  std::cout << "Information after initial logic examination: " << std::endl;
   // print_segs_info(temp_cluster);
 
-  
+
   // find the main vertex ...
   bool flag_save_only_showers = true;
   for (auto it = map_vertex_segments.begin(); it!= map_vertex_segments.end(); it++){
@@ -1255,14 +1279,20 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
       }
     }
   }
+  if (flag_timing) std::cout << "determine_main_vertex timing: scan for flag_save_only_showers took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
 
   if ((!flag_save_only_showers) && temp_cluster == main_cluster)  {
+    dmv_t0 = DMV_Clock::now();
     improve_vertex(temp_cluster, false);
+    if (flag_timing) std::cout << "determine_main_vertex timing: improve_vertex took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
     // if one shower in and a good track out, reverse the shower ..
+    dmv_t0 = DMV_Clock::now();
     fix_maps_shower_in_track_out(temp_cluster->get_cluster_id());
+    if (flag_timing) std::cout << "determine_main_vertex timing: fix_maps_shower_in_track_out took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
   }
-  
 
+
+  dmv_t0 = DMV_Clock::now();
   std::map<ProtoVertex*, std::pair<int, int> > map_vertex_track_shower;
   WCPPID::ProtoVertexSelection main_vertex_candidates;
   for (auto it = map_vertex_segments.begin(); it!= map_vertex_segments.end(); it++){
@@ -1272,12 +1302,14 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
     auto results = examine_main_vertex_candidate(vtx);
     bool flag_in = std::get<0>(results);
     int ntracks = std::get<1>(results), nshowers = std::get<2>(results);
-    
+
     if (!flag_in){
       map_vertex_track_shower[vtx] = std::make_pair(ntracks, nshowers);
     }
   }
+  if (flag_timing) std::cout << "determine_main_vertex timing: build map_vertex_track_shower took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
 
+  dmv_t0 = DMV_Clock::now();
   if (flag_save_only_showers){
     for (auto it = map_vertex_segments.begin(); it!= map_vertex_segments.end(); it++){
       if (it->first->get_cluster_id() != temp_cluster->get_cluster_id()) continue;
@@ -1294,20 +1326,25 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
       if (it->second.first >0) main_vertex_candidates.push_back(it->first);
     }
   }
+  if (flag_timing) std::cout << "determine_main_vertex timing: build main_vertex_candidates took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
 
 
   map_cluster_main_candidate_vertices[temp_cluster] = main_vertex_candidates;
 
+  dmv_t0 = DMV_Clock::now();
   if (flag_save_only_showers){
     if (main_vertex_candidates.size()>0){
       if (flag_print)
 	std::cout << "Determining the main vertex with all showers: " << main_vertex_candidates.size() << " in cluster " << main_vertex_candidates.front()->get_cluster_id() << std::endl;
       main_vertex = compare_main_vertices_all_showers(main_vertex_candidates, temp_cluster);
+      std::cout << "[determine_main_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Set main_vertex (all-showers): id=" << main_vertex->get_id() << " at " << main_vertex->get_fit_pt() << std::endl;
+      if (flag_timing) std::cout << "determine_main_vertex timing: compare_main_vertices_all_showers took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
     }else{
       return;
     }
   }else{
     examine_main_vertices(main_vertex_candidates);
+    if (flag_timing) std::cout << "determine_main_vertex timing: examine_main_vertices took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
     if (flag_print){
       //  std::cout << main_vertex_candidates.size() << std::endl;
       for (auto it = main_vertex_candidates.begin(); it!= main_vertex_candidates.end(); it++){
@@ -1319,24 +1356,30 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
       }
     }
 
-    
+    dmv_t0 = DMV_Clock::now();
     if (main_vertex_candidates.size()==1){
       main_vertex = main_vertex_candidates.front();
+      std::cout << "[determine_main_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Set main_vertex (single candidate): id=" << main_vertex->get_id() << " at " << main_vertex->get_fit_pt() << std::endl;
     }else if (main_vertex_candidates.size()>1){
       main_vertex = compare_main_vertices(main_vertex_candidates);
+      std::cout << "[determine_main_vertex] Cluster: " << temp_cluster->get_cluster_id() << " Set main_vertex: id=" << main_vertex->get_id() << " at " << main_vertex->get_fit_pt() << std::endl;
     }else{
       return;
     }
+    if (flag_timing) std::cout << "determine_main_vertex timing: compare_main_vertices took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
   }
 
 
   if (!flag_save_only_showers){
     // examine structure before examine directions ??? ...
+    dmv_t0 = DMV_Clock::now();
     examine_structure_final(temp_cluster);
+    if (flag_timing) std::cout << "determine_main_vertex timing: examine_structure_final took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
   }
 
-  
+  dmv_t0 = DMV_Clock::now();
   bool flag_check = examine_direction(main_vertex);
+  if (flag_timing) std::cout << "determine_main_vertex timing: examine_direction took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t0).count() << " ms" << std::endl;
   if (!flag_check) std::cout << "Wrong: inconsistency for track directions in cluster " << main_vertex->get_cluster_id() << std::endl;
   if (flag_print){
     std::cout << "Main Vertex " << main_vertex->get_fit_pt() << " connecting to: ";
@@ -1347,10 +1390,11 @@ void WCPPID::NeutrinoID::determine_main_vertex(WCPPID::PR3DCluster* temp_cluster
     print_segs_info(main_vertex->get_cluster_id(), main_vertex);
   }
 
-  
+  if (flag_timing) std::cout << "determine_main_vertex timing: TOTAL took " << std::chrono::duration_cast<DMV_ms>(DMV_Clock::now()-dmv_t_total).count() << " ms" << std::endl;
+
   // std::cout << "Information after main vertex determination: " << std::endl;
   // print_segs_info(main_vertex);
-  
+
 }
 
 std::tuple<bool, int, int> WCPPID::NeutrinoID::examine_main_vertex_candidate(WCPPID::ProtoVertex *vertex){
@@ -1534,10 +1578,10 @@ WCPPID::ProtoVertex* WCPPID::NeutrinoID::compare_main_vertices_all_showers(WCPPI
       }
     }
   }
-  
 
 
-  
+
+  std::cout << "[compare_main_vertices_all_showers] Cluster: " << temp_main_vertex->get_cluster_id() << " Selected vertex id=" << temp_main_vertex->get_id() << " at " << temp_main_vertex->get_fit_pt() << " from " << vertex_candidates.size() << " candidates" << std::endl;
   return temp_main_vertex;
 }
 
@@ -1673,7 +1717,7 @@ WCPPID::ProtoVertex* WCPPID::NeutrinoID::compare_main_vertices(WCPPID::ProtoVert
   }
 
   //  std::cout << (max_vertex->get_fit_pt().z-min_z)/(400*units::cm) << std::endl;
-  
+  std::cout << "[compare_main_vertices] Cluster: " << max_vertex->get_cluster_id() << " Selected vertex id=" << max_vertex->get_id() << " at " << max_vertex->get_fit_pt() << " score=" << max_val << " from " << vertex_candidates.size() << " candidates" << std::endl;
   return max_vertex;
 }
 
@@ -1830,6 +1874,7 @@ float WCPPID::NeutrinoID::calc_conflict_maps(WCPPID::ProtoVertex *temp_vertex){
 
 
 bool WCPPID::NeutrinoID::examine_direction(WCPPID::ProtoVertex* temp_vertex, bool flag_final){
+  std::cout << "[examine_direction] Cluster: " << temp_vertex->get_cluster_id() << " Start vtx id=" << temp_vertex->get_id() << " at " << temp_vertex->get_fit_pt() << " -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 
   double max_vtx_length = 0;
   double min_vtx_length = 1e9;
@@ -1941,8 +1986,12 @@ bool WCPPID::NeutrinoID::examine_direction(WCPPID::ProtoVertex* temp_vertex, boo
 	  flag_start = true;
 	else if (current_sg->get_wcpt_vec().back().index == prev_vtx->get_wcpt().index)
 	  flag_start = false;
+	int old_dir_ed = current_sg->get_flag_dir();
+	int old_ptype_ed = current_sg->get_particle_type();
 	if (flag_start) current_sg->set_flag_dir(1);
 	else current_sg->set_flag_dir(-1);
+	if (old_dir_ed != current_sg->get_flag_dir())
+	  std::cout << "[examine_direction] Cluster: " << temp_vertex->get_cluster_id() << " Seg " << current_sg->get_id() << " dir: " << old_dir_ed << " -> " << current_sg->get_flag_dir() << " from vtx " << prev_vtx->get_id() << std::endl;
 	
 	//   if (current_sg->get_id()==19) std::cout << current_sg->get_id() << " " << flag_start << " " << map_vertex_segments[prev_vtx].size() << " " << prev_vtx->get_wcpt().index << " " << current_sg->get_wcpt_vec().front().index << " " << current_sg->get_wcpt_vec().back().index << std::endl;
 
@@ -2038,6 +2087,8 @@ bool WCPPID::NeutrinoID::examine_direction(WCPPID::ProtoVertex* temp_vertex, boo
 	
 	current_sg->cal_4mom();
 	current_sg->set_dir_weak(true);
+	if (old_ptype_ed != current_sg->get_particle_type())
+	  std::cout << "[examine_direction] Cluster: " << temp_vertex->get_cluster_id() << " Seg " << current_sg->get_id() << " particle type: " << old_ptype_ed << " -> " << current_sg->get_particle_type() << " len=" << length/units::cm << "cm from vtx " << prev_vtx->get_id() << std::endl;
       }else if (current_sg->get_flag_dir() !=0 && (!current_sg->is_dir_weak())){
 	auto pair_result = calculate_num_daughter_showers(prev_vtx, current_sg);
 	int num_daughter_showers = pair_result.first;
@@ -2045,6 +2096,7 @@ bool WCPPID::NeutrinoID::examine_direction(WCPPID::ProtoVertex* temp_vertex, boo
 	//std::cout << current_sg->get_id() << " " << current_sg->get_particle_type() << " " << flag_shower_in << " " << num_daughter_showers << " " << std::endl;
 	if (current_sg->get_particle_type()==2212 && flag_shower_in && num_daughter_showers == 0){
 	  for (auto it1 = in_showers.begin(); it1!= in_showers.end(); it1++){
+	    int old_ptype_in_shower = (*it1)->get_particle_type();
 	    if ((*it1)->get_medium_dQ_dx()/(43e3/units::cm) > 1.3){
 	      (*it1)->set_particle_type(2212);
 	      (*it1)->set_flag_shower_trajectory(false);
@@ -2060,6 +2112,8 @@ bool WCPPID::NeutrinoID::examine_direction(WCPPID::ProtoVertex* temp_vertex, boo
 	      if ((*it1)->get_particle_4mom(3)>0)
 		(*it1)->cal_4mom();
 	    }
+	    if (old_ptype_in_shower != (*it1)->get_particle_type())
+	      std::cout << "[examine_direction] Cluster: " << temp_vertex->get_cluster_id() << " In-shower seg " << (*it1)->get_id() << " particle type: " << old_ptype_in_shower << " -> " << (*it1)->get_particle_type() << " (proton/pion reclassification)" << std::endl;
 	  }
 	}
       } // good track ...
