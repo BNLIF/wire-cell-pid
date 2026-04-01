@@ -149,6 +149,9 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
         map_cluster_main_vertices[main_cluster] = main_vertex;
         main_vertex = 0;
       }
+
+      print_segs_info(main_cluster->get_cluster_id(), main_vertex);
+
     
     }
 
@@ -195,50 +198,55 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
     deghosting();
   }
  
-  
-    // if (flag_main_cluster){
-    //   if (flag_dl_vtx){
-    //     bool flag_change = determine_overall_main_vertex_DL();
-    //     if (!flag_change) determine_overall_main_vertex();
-    //   }else{
-    //     determine_overall_main_vertex();
-    //   }
-    // }
+
+
+  if (flag_main_cluster){
+    if (flag_dl_vtx){
+      bool flag_change = determine_overall_main_vertex_DL();
+      if (!flag_change) determine_overall_main_vertex();
+    }else{
+      determine_overall_main_vertex();
+    }
+  }
 
   
   
-    // if (flag_main_cluster && main_vertex !=0){
+    if (flag_main_cluster && main_vertex !=0){
       
       
-    //   // fit the vertex in 3D 
-    //   improve_vertex(main_cluster, true, true);
+      // fit the vertex in 3D 
+      improve_vertex(main_cluster, true, true);
 
-      
+      std::cout << "After improve_vertex " << std::endl;
+      print_segs_info(main_vertex->get_cluster_id(), main_vertex);
+
     
-    //   clustering_points(main_cluster);
-    //   examine_direction(main_vertex);
+      clustering_points(main_cluster);
+      examine_direction(main_vertex);
+      
+      std::cout << "After examine_direction " << std::endl;
+      print_segs_info(main_vertex->get_cluster_id(), main_vertex);
+      
+      std::cout << "Overall main Vertex " << main_vertex->get_fit_pt() << " connecting to: ";
+      for (auto it = map_vertex_segments[main_vertex].begin(); it!=map_vertex_segments[main_vertex].end(); it++){
+        std::cout << (*it)->get_id() << ", ";
+      }
+      std::cout << " in cluster " << main_vertex->get_cluster_id() << std::endl;
+      print_segs_info(main_vertex->get_cluster_id(), main_vertex);
       
       
-    //   std::cout << "Overall main Vertex " << main_vertex->get_fit_pt() << " connecting to: ";
-    //   for (auto it = map_vertex_segments[main_vertex].begin(); it!=map_vertex_segments[main_vertex].end(); it++){
-    //     std::cout << (*it)->get_id() << ", ";
-    //   }
-    //   std::cout << " in cluster " << main_vertex->get_cluster_id() << std::endl;
-    //   print_segs_info(main_vertex->get_cluster_id(), main_vertex);
-      
-      
-    //   // overall
-    //   separate_track_shower();
-    //   // for charge based on calculation ...
-    //   collect_2D_charges();
+      // overall
+      separate_track_shower();
+      // for charge based on calculation ...
+      collect_2D_charges();
 
 
       
-    //   // cluster E&M ...
-    //   shower_clustering_with_nv();
+      // cluster E&M ...
+      shower_clustering_with_nv();
 
       
-    // }
+    }
 
   //   if (flag_tagger){
 
@@ -323,6 +331,13 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
 
 
 void WCPPID::NeutrinoID::determine_overall_main_vertex(){
+  const bool flag_timing = true;
+  using DOMV_Clock = std::chrono::high_resolution_clock;
+  using DOMV_ms = std::chrono::duration<double, std::milli>;
+  auto domv_t_total = DOMV_Clock::now();
+  auto domv_t0 = DOMV_Clock::now();
+  std::cout << "[determine_overall_main_vertex] Start -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
+
   PR3DCluster* max_length_cluster = 0;
   double max_length = 0;
   for (auto it = map_cluster_length.begin(); it!= map_cluster_length.end(); it++){
@@ -334,8 +349,11 @@ void WCPPID::NeutrinoID::determine_overall_main_vertex(){
   }
 
   // check main vertices ...
+  domv_t0 = DOMV_Clock::now();
   examine_main_vertices();
-  
+  if (flag_timing) std::cout << "[determine_overall_main_vertex] timing: examine_main_vertices took " << std::chrono::duration_cast<DOMV_ms>(DOMV_Clock::now()-domv_t0).count() << " ms" << std::endl;
+
+  domv_t0 = DOMV_Clock::now();
   if (flag_neutrino_id_process==1){
     // development chain ...
     check_switch_main_cluster();
@@ -344,7 +362,8 @@ void WCPPID::NeutrinoID::determine_overall_main_vertex(){
     if (max_length > map_cluster_length[main_cluster] * 0.8 )
       check_switch_main_cluster(map_cluster_main_vertices[main_cluster], max_length_cluster);
   }
-    
+  if (flag_timing) std::cout << "[determine_overall_main_vertex] timing: check_switch_main_cluster took " << std::chrono::duration_cast<DOMV_ms>(DOMV_Clock::now()-domv_t0).count() << " ms" << std::endl;
+
   main_vertex = map_cluster_main_vertices[main_cluster];
 
   // examine the track connected to it ...
@@ -381,7 +400,8 @@ void WCPPID::NeutrinoID::determine_overall_main_vertex(){
       vertices_in_long_muon.erase(*it);
     }
   }
-  
+
+  std::cout << "[determine_overall_main_vertex] Done -- total took " << std::chrono::duration_cast<DOMV_ms>(DOMV_Clock::now()-domv_t_total).count() << " ms" << std::endl;
 }
 
 
@@ -744,7 +764,7 @@ void WCPPID::NeutrinoID::check_switch_main_cluster(){
 
     if (flag_print){
       for (auto it = vertex_candidates.begin(); it!= vertex_candidates.end(); it++){
-	std::cout << "Candidate main vertex " << (*it)->get_cluster_id() << " " << (*it)->get_fit_pt() << " connecting to: ";
+	std::cout << "[check_switch_main_cluster] Candidate main vertex " << (*it)->get_cluster_id() << " " << (*it)->get_fit_pt() << " connecting to: ";
 	for (auto it1 = map_vertex_segments[*it].begin(); it1!=map_vertex_segments[*it].end(); it1++){
 	  std::cout << (*it1)->get_id() << ", ";
 	}
@@ -755,9 +775,9 @@ void WCPPID::NeutrinoID::check_switch_main_cluster(){
     WCPPID::ProtoVertex *temp_main_vertex_1 = compare_main_vertices_global(vertex_candidates);
     if (temp_main_vertex_1 != temp_main_vertex){
       if (temp_main_vertex != 0){
-	std::cout << "Switch Main Cluster " << temp_main_vertex->get_cluster_id() << " to " << temp_main_vertex_1->get_cluster_id() << std::endl;
+	std::cout << "[check_switch_main_cluster] Switch Main Cluster " << temp_main_vertex->get_cluster_id() << " to " << temp_main_vertex_1->get_cluster_id() << std::endl;
       }else{
-	std::cout << "Switch Main Cluster  to " << temp_main_vertex_1->get_cluster_id() << std::endl;
+	std::cout << "[check_switch_main_cluster] Switch Main Cluster  to " << temp_main_vertex_1->get_cluster_id() << std::endl;
       }
       for (auto it = map_cluster_main_vertices.begin(); it!= map_cluster_main_vertices.end(); it++){
 	if (it->second == temp_main_vertex_1){
@@ -941,7 +961,7 @@ void WCPPID::NeutrinoID::check_switch_main_cluster(WCPPID::ProtoVertex *temp_mai
   if (n_showers == map_vertex_segments[temp_main_vertex].size()) flag_switch = true;
 
   if (flag_switch){
-    std::cout << "Switch Main Cluster " << main_cluster->get_cluster_id() << " to " << max_length_cluster->get_cluster_id() << std::endl;
+    std::cout << "[check_switch_main_cluster] Switch Main Cluster " << main_cluster->get_cluster_id() << " to " << max_length_cluster->get_cluster_id() << std::endl;
     swap_main_cluster(max_length_cluster);
   }
 }
@@ -1431,6 +1451,30 @@ void WCPPID::NeutrinoID::fill_reco_simple_tree(WCPPID::WCRecoTree& rtree){
 void WCPPID::NeutrinoID::fill_particle_tree(WCPPID::WCRecoTree& rtree){
   if (main_vertex ==0 ) return;
 
+  // helpers for diagnostic prints
+  auto fpt_pdgname = [](int pdg) -> std::string {
+    if (pdg==11)   return "e-";
+    if (pdg==-11)  return "e+";
+    if (pdg==13)   return "mu-";
+    if (pdg==-13)  return "mu+";
+    if (pdg==2212) return "proton";
+    if (pdg==2112) return "neutron";
+    if (pdg==211)  return "pi+";
+    if (pdg==-211) return "pi-";
+    if (pdg==111)  return "pi0";
+    if (pdg==22)   return "gamma";
+    return std::to_string(pdg);
+  };
+  auto fpt_ke_mev = [](const WCPPID::WCRecoTree& rt, int idx) -> float {
+    int pdg = rt.mc_pdg[idx];
+    float mass = 0;
+    if (abs(pdg)==13)           mass = 0.1057f;
+    if (abs(pdg)==211)          mass = 0.1396f;
+    if (pdg==111)               mass = 0.1350f;
+    if (pdg==2212 || pdg==2112) mass = 0.9383f;
+    return (rt.mc_startMomentum[idx][3] - mass) * 1000.f;
+  };
+
   for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
     WCPPID::ProtoSegment* sg= it->first;
     if (map_segment_in_shower.find(sg)!=map_segment_in_shower.end()) continue;
@@ -1441,6 +1485,18 @@ void WCPPID::NeutrinoID::fill_particle_tree(WCPPID::WCRecoTree& rtree){
       rtree.mc_stopped[rtree.mc_Ntrack-1] = 1;
     }else{
       rtree.mc_stopped[rtree.mc_Ntrack-1] = 0;
+    }
+    { int n = rtree.mc_Ntrack-1;
+      std::cout << "[fill_particle_tree] ADD track-node"
+                << "  seg=" << rtree.mc_id[n]
+                << "  parent=ROOT"
+                << "  name=" << fpt_pdgname(rtree.mc_pdg[n])
+                << "  ke=" << fpt_ke_mev(rtree,n) << " MeV"
+                << "  cluster=" << sg->get_cluster_id()
+                << "  in_main_cluster=1  is_shower_seg=0"
+                << "  start=(" << rtree.mc_startXYZT[n][0] << "," << rtree.mc_startXYZT[n][1] << "," << rtree.mc_startXYZT[n][2] << ") cm"
+                << "  end=(" << rtree.mc_endXYZT[n][0] << "," << rtree.mc_endXYZT[n][1] << "," << rtree.mc_endXYZT[n][2] << ") cm"
+                << std::endl;
     }
         //std::cout << "kak " << sg->get_cluster_id() << " " << sg->get_id() << std::endl;
   }
@@ -1458,10 +1514,47 @@ double ke = rtree.mc_startMomentum[i][3]-mass;
 //std::cout<<std::endl;
 
   for (auto it = showers.begin(); it!=showers.end();it++){
+    WCPPID::WCShower *fpt_sh = *it;
+    std::pair<WCPPID::ProtoVertex*, int> fpt_svtx = fpt_sh->get_start_vertex();
+    int fpt_conn = fpt_svtx.second;
+    double fpt_ke_s = fpt_sh->get_kine_best();
+    if (fpt_ke_s == 0) fpt_ke_s = fpt_sh->get_kine_charge();
+    fpt_ke_s /= units::MeV;
+    int fpt_pdg_s = fpt_sh->get_particle_type();
+    int fpt_clus_s = fpt_sh->get_start_segment() ? fpt_sh->get_start_segment()->get_cluster_id() : -1;
+    if (fpt_conn == 4) {
+      std::cout << "[fill_particle_tree] SKIP shower (conn_type=4)"
+                << "  pdg=" << fpt_pdg_s
+                << "  ke=" << fpt_ke_s << " MeV"
+                << "  cluster=" << fpt_clus_s << std::endl;
+    } else {
+      std::string fpt_reason;
+      if (fpt_svtx.first == main_vertex)
+        fpt_reason = "reason=start_vtx==main_vertex";
+      else if (map_vertex_in_shower.find(fpt_svtx.first) != map_vertex_in_shower.end())
+        fpt_reason = "(via root-reachable shower vtx)";
+      else
+        fpt_reason = "reason=via_parent_segment";
+      std::cout << "[fill_particle_tree] ROOT shower  conn_type=" << fpt_conn
+                << "  " << fpt_reason
+                << "  pdg=" << fpt_pdg_s
+                << "  ke=" << fpt_ke_s << " MeV"
+                << "  cluster=" << fpt_clus_s
+                << "  start=(" << fpt_sh->get_start_point().x/units::cm
+                << "," << fpt_sh->get_start_point().y/units::cm
+                << "," << fpt_sh->get_start_point().z/units::cm << ") cm" << std::endl;
+    }
     fill_reco_tree(*it, rtree);
     rtree.mc_stopped[rtree.mc_Ntrack-1] = 0;
-    //std::cout << "gag " << *it << " " << (*it)->get_start_segment()->get_id() << std::endl;
-    //std::cout << "gag " << (*it)->get_start_segment()->get_cluster_id() << " " << (*it)->get_start_segment()->get_id() << std::endl;
+    { int n = rtree.mc_Ntrack-1;
+      std::cout << "[fill_particle_tree] ADD shower-leaf"
+                << "  id=" << rtree.mc_id[n]
+                << "  pdg=" << rtree.mc_pdg[n]
+                << "  conn_type=" << fpt_conn
+                << "  ke=" << fpt_ke_s << " MeV"
+                << "  cluster=" << fpt_clus_s
+                << "  has_start_vtx=" << (fpt_svtx.first != nullptr ? 1 : 0) << std::endl;
+    }
   }
 
     // id vs. rtree id
@@ -1565,7 +1658,12 @@ double ke = rtree.mc_startMomentum[i][3]-mass;
 	}
       }else if (pair_vertex.second == 2 || pair_vertex.second == 3){
 	int psuedo_particle_id = fill_psuedo_reco_tree(shower, rtree);
-
+        { int n = rtree.mc_Ntrack-1;
+          std::cout << "[fill_particle_tree] ADD pseudo-gamma"
+                    << "  id=" << rtree.mc_id[n]
+                    << "  ke=" << rtree.mc_startMomentum[n][3]*1000.f << " MeV"
+                    << "  child_pdg=" << shower->get_particle_type() << std::endl;
+        }
 	if (pair_vertex.first == main_vertex){
 	  rtree.mc_mother[rtree.mc_Ntrack-1] = 0;
 	  rtree.mc_daughters->at(rtree.mc_Ntrack-1).push_back(map_sg_sgid[curr_sg]);
@@ -1593,7 +1691,12 @@ double ke = rtree.mc_startMomentum[i][3]-mass;
        std::pair<int, int> pio_info_pair = fill_pi0_reco_tree(shower, rtree);
        
        int psuedo_particle_id = fill_psuedo_reco_tree(shower, rtree);
-       
+       { int n = rtree.mc_Ntrack-1;
+         std::cout << "[fill_particle_tree] ADD pseudo-gamma (pi0)"
+                   << "  id=" << rtree.mc_id[n]
+                   << "  ke=" << rtree.mc_startMomentum[n][3]*1000.f << " MeV"
+                   << "  child_pdg=" << shower->get_particle_type() << std::endl;
+       }
        //       std::cout << pio_info_pair.first << " " << pio_info_pair.second << " " << pair_vertex.first << " " << main_vertex << std::endl;
        
        if (pair_vertex.first == main_vertex){

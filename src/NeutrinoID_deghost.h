@@ -11,12 +11,21 @@ bool sortbysec1(const std::pair<WCPPID::ProtoSegment*,double> &a,
 }
 
 void WCPPID::NeutrinoID::deghosting(){
-  // std::cout << "B " << std::endl;
-  deghost_clusters();
+  const bool flag_timing = true;
+  using DG_Clock = std::chrono::high_resolution_clock;
+  using DG_ms = std::chrono::duration<double, std::milli>;
+  auto dg_t_total = DG_Clock::now();
+  auto dg_t0 = DG_Clock::now();
+  std::cout << "[deghosting] Start -- # of Vertices: " << map_vertex_segments.size() << "; # of Segments: " << map_segment_vertices.size() << std::endl;
 
-  //std::cout << "A " << std::endl;
+  deghost_clusters();
+  if (flag_timing) std::cout << "[deghosting] timing: deghost_clusters took " << std::chrono::duration_cast<DG_ms>(DG_Clock::now()-dg_t0).count() << " ms" << std::endl;
+
+  dg_t0 = DG_Clock::now();
   deghost_segments();
-  //std::cout << "C " << std::endl;
+  if (flag_timing) std::cout << "[deghosting] timing: deghost_segments took " << std::chrono::duration_cast<DG_ms>(DG_Clock::now()-dg_t0).count() << " ms" << std::endl;
+
+  dg_t0 = DG_Clock::now();
   std::set<WCPPID::PR3DCluster*> temp_clusters;
   for (auto it = map_cluster_main_vertices.begin(); it!= map_cluster_main_vertices.end(); it++){
     WCPPID::PR3DCluster *cluster = it->first;
@@ -28,7 +37,9 @@ void WCPPID::NeutrinoID::deghosting(){
   for (auto it = temp_clusters.begin(); it != temp_clusters.end(); it++){
     map_cluster_main_vertices.erase(*it);
   }
-  
+  if (flag_timing) std::cout << "[deghosting] timing: cleanup map_cluster_main_vertices took " << std::chrono::duration_cast<DG_ms>(DG_Clock::now()-dg_t0).count() << " ms" << std::endl;
+
+  std::cout << "[deghosting] Done -- total took " << std::chrono::duration_cast<DG_ms>(DG_Clock::now()-dg_t_total).count() << " ms" << std::endl;
 }
 
 void WCPPID::NeutrinoID::deghost_segments(){
@@ -80,11 +91,11 @@ void WCPPID::NeutrinoID::deghost_segments(){
       int start_n = map_vertex_segments[pair_vertices.first].size();
       int end_n = map_vertex_segments[pair_vertices.second].size();
       
+      int num_dead[3]={0,0,0};
+      int num_unique[3]={0,0,0};
+      int num_total_points = 0;
+
       if ((start_n==1 || end_n == 1) && medium_dQ_dx < 1.1 * 43e3/units::cm && length > 3.6*units::cm){
-	int num_dead[3]={0,0,0};
-	int num_unique[3]={0,0,0};
-	int num_total_points = 0;
-	  
 	PointVector& pts = sg->get_point_vec();
 	num_total_points += pts.size();
 	
@@ -183,7 +194,16 @@ void WCPPID::NeutrinoID::deghost_segments(){
 	if (flag_add_seg){
 	  global_skeleton_cloud.AddPoints(sg->get_point_vec());
 	}else{
-	  std::cout << "Remove Cluster ID " << sg->get_cluster_id() << " segment id " << sg->get_id() << std::endl;
+	  std::cout << "[deghost_segments] cluster " << sg->get_cluster_id()
+		    << " removing segment id=" << sg->get_id()
+		    << " len=" << length/units::cm << "cm"
+		    << " dQ/dx=" << medium_dQ_dx/(43e3/units::cm)
+		    << " unique=(" << num_unique[0] << "," << num_unique[1] << "," << num_unique[2] << ")"
+		    << " dead=(" << num_dead[0] << "," << num_dead[1] << "," << num_dead[2] << ")"
+		    << " pts=" << num_total_points
+		    << " vtx1(" << pair_vertices.first->get_fit_pt().x/units::cm << "," << pair_vertices.first->get_fit_pt().y/units::cm << "," << pair_vertices.first->get_fit_pt().z/units::cm << ")"
+		    << " vtx2(" << pair_vertices.second->get_fit_pt().x/units::cm << "," << pair_vertices.second->get_fit_pt().y/units::cm << "," << pair_vertices.second->get_fit_pt().z/units::cm << ")"
+		    << std::endl;
 	  // remove segment
 	  del_proto_segment(sg);
 	}
@@ -379,6 +399,12 @@ void WCPPID::NeutrinoID::deghost_clusters(){
 	  }
 	}
       }else{
+	std::cout << "[deghost_clusters] cluster " << cluster->get_cluster_id()
+		  << " ghosted len=" << cluster_length_map[cluster]/units::cm << "cm"
+		  << " pts=" << num_total_points
+		  << " unique=(" << int(unique_percent_u*100+0.5) << "%," << int(unique_percent_v*100+0.5) << "%," << int(unique_percent_w*100+0.5) << "%)"
+		  << " dead=(" << int(dead_percent_u*100+0.5) << "%," << int(dead_percent_v*100+0.5) << "%," << int(dead_percent_w*100+0.5) << "%)"
+		  << std::endl;
 	to_be_removed_clusters.push_back(cluster);
       }
       

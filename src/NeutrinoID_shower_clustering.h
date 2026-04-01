@@ -234,7 +234,7 @@ void WCPPID::NeutrinoID::shower_clustering_connecting_to_main_vertex(){
       WCPPID::WCShower *shower = it1->first;
       WCPPID::ProtoSegment *max_sg = it1->second;
       if (shower == max_shower){
-	std::cout << "Convert EM shower " << shower->get_start_segment()->get_id() << std::endl;
+	std::cout << "[shower_clustering_connecting_to_main_vertex] Convert EM shower " << shower->get_start_segment()->get_id() << std::endl;
 	shower->get_start_segment()->set_particle_type(11);
 	showers.push_back(shower);
 	max_sg->set_flag_avoid_muon_check(true);
@@ -266,34 +266,114 @@ void WCPPID::NeutrinoID::shower_clustering_connecting_to_main_vertex(){
 }
 
 void WCPPID::NeutrinoID::shower_clustering_with_nv(){
+  using SCNV_Clock = std::chrono::high_resolution_clock;
+  using SCNV_ms = std::chrono::duration<double, std::milli>;
+  auto scnv_t_total = SCNV_Clock::now();
+  auto scnv_t0 = SCNV_Clock::now();
 
   // connect to the main cluster ...
   shower_clustering_with_nv_in_main_cluster();
+  auto scnv_dt_in_main_cluster = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
 
   // examine things connecting to the main vertex
   shower_clustering_connecting_to_main_vertex();
-  
+  auto scnv_dt_connecting_to_main_vertex = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
+
   //std::cout << showers.size() << std::endl;
   shower_clustering_with_nv_from_main_cluster();
+  auto scnv_dt_from_main_cluster = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
   //  std::cout << showers.size() << std::endl;
   shower_clustering_with_nv_from_vertices();
-  //  std::cout << showers.size() << std::endl;  
+  auto scnv_dt_from_vertices = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
+  //  std::cout << showers.size() << std::endl;
   calculate_shower_kinematics();
+  auto scnv_dt_calc_kine_1 = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
   examine_merge_showers();
-  
+  auto scnv_dt_examine_merge = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
+
   // check remaining clusters ...
   shower_clustering_in_other_clusters(true);
+  auto scnv_dt_in_other_clusters = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
 
   calculate_shower_kinematics();
+  auto scnv_dt_calc_kine_2 = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
 
   // examine shower trunk and added to shower
   examine_showers();
-
+  auto scnv_dt_examine_showers = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
 
   id_pi0_with_vertex();
-  
+  auto scnv_dt_id_pi0_with_vertex = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count(); scnv_t0 = SCNV_Clock::now();
+
   id_pi0_without_vertex();
-  
+  auto scnv_dt_id_pi0_without_vertex = std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t0).count();
+
+  // Debug summary: showers and pi0s
+  {
+    std::cout << "[shower_clustering_with_nv] " << showers.size() << " shower(s)" << std::endl;
+    int idx = 0;
+    for (auto shower : showers) {
+      if (!shower) continue;
+      std::set<int> shower_clusters;
+      for (auto it = map_segment_in_shower.begin(); it != map_segment_in_shower.end(); it++) {
+        if (it->second == shower && it->first)
+          shower_clusters.insert(it->first->get_cluster_id());
+      }
+      WCP::Point sp = shower->get_start_point();
+      TVector3 dir = shower->get_init_dir();
+      std::cout << "[shower_clustering_with_nv]   shower[" << idx++ << "]"
+                << " pdg=" << shower->get_particle_type()
+                << " conn=" << shower->get_start_vertex().second
+                << " flag_shower=" << shower->get_flag_shower()
+                << " nseg=" << shower->get_num_segments()
+                << " ncls=" << shower_clusters.size()
+                << " kine_charge=" << shower->get_kine_charge()/units::MeV << "MeV"
+                << " start=(" << sp.x/units::cm << "," << sp.y/units::cm << "," << sp.z/units::cm << ")cm"
+                << " dir=(" << dir.X() << "," << dir.Y() << "," << dir.Z() << ")"
+                << std::endl;
+    }
+    std::cout << "[shower_clustering_with_nv] " << map_pio_id_showers.size() << " pi0(s)" << std::endl;
+    for (auto it = map_pio_id_showers.begin(); it != map_pio_id_showers.end(); it++) {
+      int pio_id = it->first;
+      auto& pi0_shower_vec = it->second;
+      auto mass_it = map_pio_id_mass.find(pio_id);
+      double mass = (mass_it != map_pio_id_mass.end()) ? mass_it->second.first : 0.0;
+      int    flag = (mass_it != map_pio_id_mass.end()) ? mass_it->second.second : 0;
+      std::cout << "[shower_clustering_with_nv]   pi0[id=" << pio_id << "]"
+                << " flag=" << flag
+                << " mass=" << mass/units::MeV << "MeV"
+                << std::endl;
+      for (size_t i = 0; i < pi0_shower_vec.size(); i++) {
+        auto s = pi0_shower_vec[i];
+        if (!s) continue;
+        WCP::Point sp = s->get_start_point();
+        TVector3 dir = s->get_init_dir();
+        std::cout << "[shower_clustering_with_nv]     pi0[id=" << pio_id << "] shower[" << i << "]"
+                  << " pdg=" << s->get_particle_type()
+                  << " nseg=" << s->get_num_segments()
+                  << " kine_charge=" << s->get_kine_charge()/units::MeV << "MeV"
+                  << " start=(" << sp.x/units::cm << "," << sp.y/units::cm << "," << sp.z/units::cm << ")cm"
+                  << " dir=(" << dir.X() << "," << dir.Y() << "," << dir.Z() << ")"
+                  << std::endl;
+      }
+    }
+  }
+
+  std::cout << " shower_clustering_with_nv timing:"
+            << " in_main_cluster=" << scnv_dt_in_main_cluster << "ms"
+            << " connecting_to_main_vertex=" << scnv_dt_connecting_to_main_vertex << "ms"
+            << " from_main_cluster=" << scnv_dt_from_main_cluster << "ms"
+            << " from_vertices=" << scnv_dt_from_vertices << "ms"
+            << " calc_kine_1=" << scnv_dt_calc_kine_1 << "ms"
+            << " examine_merge=" << scnv_dt_examine_merge << "ms"
+            << " in_other_clusters=" << scnv_dt_in_other_clusters << "ms"
+            << " calc_kine_2=" << scnv_dt_calc_kine_2 << "ms"
+            << " examine_showers=" << scnv_dt_examine_showers << "ms"
+            << " id_pi0_with_vertex=" << scnv_dt_id_pi0_with_vertex << "ms"
+            << " id_pi0_without_vertex=" << scnv_dt_id_pi0_without_vertex << "ms"
+            << std::endl;
+  std::cout << "[shower_clustering_with_nv] Done -- total took " << std::chrono::duration_cast<SCNV_ms>(SCNV_Clock::now()-scnv_t_total).count() << " ms" << std::endl;
+
 }
 
 
@@ -639,7 +719,7 @@ void WCPPID::NeutrinoID::id_pi0_without_vertex(){
       shower_2->calculate_kinematics();
       
       update_shower_maps();
-      std::cout << "Pi0 (displaced vertex) found with mass: " << " " << mass_save/units::MeV << " MeV with " << shower_1->get_kine_charge()/units::MeV << " MeV + " << shower_2->get_kine_charge()/units::MeV << " MeV" << std::endl;
+      std::cout << "[id_pi0_without_vertex] Pi0 (displaced vertex) found with mass: " << " " << mass_save/units::MeV << " MeV with " << shower_1->get_kine_charge()/units::MeV << " MeV + " << shower_2->get_kine_charge()/units::MeV << " MeV" << std::endl;
     }
         
   } // more than one shower
@@ -866,7 +946,7 @@ void WCPPID::NeutrinoID::id_pi0_with_vertex(){
 	shower_2->calculate_kinematics();
       }
       
-      std::cout << "Pi0 found with mass: " << " " << mass_save/units::MeV << " MeV with " << shower_1->get_kine_charge()/units::MeV << " MeV + " << shower_2->get_kine_charge()/units::MeV << " MeV" << std::endl;
+      std::cout << "[id_pi0_with_vertex] Pi0 found with mass: " << " " << mass_save/units::MeV << " MeV with " << shower_1->get_kine_charge()/units::MeV << " MeV + " << shower_2->get_kine_charge()/units::MeV << " MeV" << std::endl;
     }else{
       break;
     }
@@ -1244,7 +1324,7 @@ void WCPPID::NeutrinoID::shower_clustering_with_nv_from_vertices(){
     shower->update_particle_type();
     bool tmp_flag = (shower->get_start_vertex().first == main_vertex);
     
-    std::cout << "Separated shower: " <<  shower->get_start_segment()->get_cluster_id()*1000 + shower->get_start_segment()->get_id() << " " << shower->get_start_segment()->get_particle_type() << " " << shower->get_num_segments() << " " << tmp_flag << " " << vec_pi.at(i).min_dis/units::cm << std::endl;
+    std::cout << "[shower_clustering_with_nv_from_vertices] Separated shower: " <<  shower->get_start_segment()->get_cluster_id()*1000 + shower->get_start_segment()->get_id() << " " << shower->get_start_segment()->get_particle_type() << " " << shower->get_num_segments() << " " << tmp_flag << " " << vec_pi.at(i).min_dis/units::cm << std::endl;
     
     // udate the map
     update_shower_maps();
@@ -1298,7 +1378,7 @@ void WCPPID::NeutrinoID::shower_clustering_with_nv_from_vertices(){
   }
 
   
-  std::cout << "With separated-cluster shower: " << showers.size() << std::endl;
+  std::cout << "[shower_clustering_with_nv_from_vertices] With separated-cluster shower: " << showers.size() << std::endl;
 
  
 
@@ -1471,7 +1551,10 @@ void WCPPID::NeutrinoID::shower_clustering_in_other_clusters(bool flag_save){
 	showers.erase(it2);
 	delete *it1;
       }
-      
+
+      shower->update_particle_type();
+      shower->calculate_kinematics();
+
       showers.push_back(shower);
     }
   }  
@@ -1604,9 +1687,9 @@ void WCPPID::NeutrinoID::shower_clustering_with_nv_in_main_cluster(){
 
 	if (fabs(curr_sg->get_particle_type()==13)){
 	  shower->set_particle_type(curr_sg->get_particle_type());
-	  std::cout << "Main-cluster long muon " << showers.size() << " : " << curr_sg->get_cluster_id()*1000 + curr_sg->get_id() << " " << curr_sg->get_particle_type() << " " << tmp_flag << " " << curr_sg->get_flag_shower_topology() << std::endl;
+	  std::cout << "[shower_clustering_with_nv_in_main_cluster] Main-cluster long muon " << showers.size() << " : " << curr_sg->get_cluster_id()*1000 + curr_sg->get_id() << " " << curr_sg->get_particle_type() << " " << tmp_flag << " " << curr_sg->get_flag_shower_topology() << std::endl;
 	}else{
-	  std::cout << "Main-cluster shower " << showers.size() << " : " << curr_sg->get_cluster_id()*1000 + curr_sg->get_id() << " " << curr_sg->get_particle_type() << " " << tmp_flag << " " << curr_sg->get_flag_shower_topology() << " " << std::endl;
+	  std::cout << "[shower_clustering_with_nv_in_main_cluster] Main-cluster shower " << showers.size() << " : " << curr_sg->get_cluster_id()*1000 + curr_sg->get_id() << " " << curr_sg->get_particle_type() << " " << tmp_flag << " " << curr_sg->get_flag_shower_topology() << " " << std::endl;
 	}
       }else{
 	// keep searching its daughter
@@ -1655,7 +1738,7 @@ void WCPPID::NeutrinoID::shower_clustering_with_nv_in_main_cluster(){
     }
     
     if (n_others >= 2 * n_muons && length_others > 0.33 * length_muons && n_muons >0 && max_muon_length < 60*units::cm){
-      std::cout << "Long muon converted to EM shower " << std::endl;
+      std::cout << "[shower_clustering_with_nv_in_main_cluster] Long muon converted to EM shower " << std::endl;
       for (auto it1 = map_seg_vtxs.begin(); it1 != map_seg_vtxs.end(); it1++){
 	WCPPID::ProtoSegment *sg1 = it1->first;
 	//	std::cout << sg1->get_length()/units::cm << " " << sg1->get_flag_shower_topology() << " " << sg1->get_flag_shower_trajectory() << " " << std::endl;
