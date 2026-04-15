@@ -248,69 +248,69 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
       
     }
 
-  //   if (flag_tagger){
+    if (flag_tagger){
 
-  //     fill_kine_tree(kine_info);
+      fill_kine_tree(kine_info);
       
-  //     bool flag_cosmic = cosmic_tagger();
+      bool flag_cosmic = cosmic_tagger();
 
 
-  //     // set the cosmic flag anyway ...
-  //     // if (flag_cosmic) tagger_info.cosmic_flag = false;
+      // set the cosmic flag anyway ...
+      // if (flag_cosmic) tagger_info.cosmic_flag = false;
       
-  //     auto results = numu_tagger();
-  //     bool flag_long_muon = results.first;
+      auto results = numu_tagger();
+      bool flag_long_muon = results.first;
 
-  //     bool flag_ssm = ssm_tagger(); 
-  //     if(flag_ssm) std::cout<<"SSM Spotted"<<std::endl;
+      bool flag_ssm = ssm_tagger(); 
+      if(flag_ssm) std::cout<<"SSM Spotted"<<std::endl;
       
-  //     nue_tagger(results.second);
+      nue_tagger(results.second);
 
-  //     bool flag_sp = singlephoton_tagger(results.second);
-  //     std::cout<<"NeutrinoID.cxx line 241"<<std::endl;
-  //     if (flag_sp){tagger_info.photon_flag = true;}
+      bool flag_sp = singlephoton_tagger(results.second);
+      std::cout<<"NeutrinoID.cxx line 241"<<std::endl;
+      if (flag_sp){tagger_info.photon_flag = true;}
 
       
-  //   }
+    }
 
-  //   if (flag_bdt >0)
-  //       tagger_info.numu_score = cal_numu_bdts_xgboost();
+    if (flag_bdt >0)
+        tagger_info.numu_score = cal_numu_bdts_xgboost();
 
     
-  //   if (flag_bdt == 1){
-  //     // Xgboost training ...
-  //     tagger_info.nue_score = cal_bdts_xgboost();
+    if (flag_bdt == 1){
+      // Xgboost training ...
+      tagger_info.nue_score = cal_bdts_xgboost();
           
-  //   }else if (flag_bdt == 2){
-  //     // TMVA training ...
-  //     tagger_info.nue_score = cal_bdts();
-  //     // numuCC TMVA training ...
-  //   }
-  // }else{
+    }else if (flag_bdt == 2){
+      // TMVA training ...
+      tagger_info.nue_score = cal_bdts();
+      // numuCC TMVA training ...
+    }
+  }else{
       
-  //   if (flag_main_cluster){
-  //     if (map_cluster_length[main_cluster] > 3*units::cm){
-  //       // find the proto vertex ...
-  //      find_proto_vertex(main_cluster, true, 2);
-  //     }else{
-  //       if (!find_proto_vertex(main_cluster, false, 1)) init_point_segment(main_cluster);
-  //     }
-  //   }
+    if (flag_main_cluster){
+      if (map_cluster_length[main_cluster] > 3*units::cm){
+        // find the proto vertex ...
+       find_proto_vertex(main_cluster, true, 2);
+      }else{
+        if (!find_proto_vertex(main_cluster, false, 1)) init_point_segment(main_cluster);
+      }
+    }
 
   
-  //   // loop over other clusters ...
-  //    if (flag_other_clusters){ 
-  //     for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
-  //       if (map_cluster_length[*it] > 6*units::cm){
-	//         find_proto_vertex(*it, true, 2);
-  //       }else{
-  //         if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
-  //       }
+    // loop over other clusters ...
+     if (flag_other_clusters){ 
+      for (auto it = other_clusters.begin(); it!=other_clusters.end(); it++){
+        if (map_cluster_length[*it] > 6*units::cm){
+	        find_proto_vertex(*it, true, 2);
+        }else{
+          if (!find_proto_vertex(*it, false, 1)) init_point_segment(*it);
+        }
 
-  //     }
-  //     //  deghost ...
-  //     deghosting();
-  //   }
+      }
+      //  deghost ...
+      deghosting();
+    }
 
   }
 
