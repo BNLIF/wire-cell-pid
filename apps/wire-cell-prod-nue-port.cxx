@@ -1590,9 +1590,9 @@ int main(int argc, char* argv[])
     WCPPID::TaggerInfo tagger_info;
     TTree *T_tagger = new TTree("T_tagger","T_tagger");
     T_tagger->SetDirectory(file1);
-    T_tagger->Branch("nu_x",&x_vtx,"nu_x/F");
-    T_tagger->Branch("nu_y",&y_vtx,"nu_y/F");
-    T_tagger->Branch("nu_z",&z_vtx,"nu_z/F");
+    T_tagger->Branch("nu_x",&x_vtx,"nu_x/D");
+    T_tagger->Branch("nu_y",&y_vtx,"nu_y/D");
+    T_tagger->Branch("nu_z",&z_vtx,"nu_z/D");
     // cosmic tagger
     T_tagger->Branch("cosmic_flag", &tagger_info.cosmic_flag, "cosmic_flag/F");
     T_tagger->Branch("cosmic_n_solid_tracks",&tagger_info.cosmic_n_solid_tracks,"cosmic_n_solid_tracks/F");
@@ -2981,18 +2981,19 @@ int main(int argc, char* argv[])
       WCPPID::Map_Proto_Vertex_Segments& map_vertex_segments = neutrino_vec.at(i)->get_map_vertex_segments();
       WCPPID::ProtoVertex *nu_vtx =  neutrino_vec.at(i)->get_main_vertex();
 
-      if (nu_vtx == nullptr) continue;  // TEMP: guard against null main vertex while NeutrinoID features are disabled
+      if (nu_vtx == nullptr) continue;
+      Point vertex_point = nu_vtx->get_fit_pt();  // fallback: always valid
       auto it1 = map_vertex_segments.find(nu_vtx);
-      Point vertex_point;
-      if (it1 != map_vertex_segments.end() && it1->second.size()>0){
-	WCPPID::ProtoSegment *sg = *map_vertex_segments[nu_vtx].begin();
-	if (nu_vtx->get_wcpt().index == sg->get_wcpt_vec().front().index){
-	  vertex_point = sg->get_point_vec().front();
-	}else{
-	  vertex_point = sg->get_point_vec().back();
+      if (it1 != map_vertex_segments.end() && !it1->second.empty()){
+	WCPPID::ProtoSegment *sg = *it1->second.begin();
+	const auto& pv = sg->get_point_vec();
+	if (!pv.empty()){
+	  if (nu_vtx->get_wcpt().index == sg->get_wcpt_vec().front().index){
+	    vertex_point = pv.front();
+	  }else{
+	    vertex_point = pv.back();
+	  }
 	}
-      }else{
-	continue;
       }
       x_vtx = vertex_point.x/units::cm;
       y_vtx = vertex_point.y/units::cm;
