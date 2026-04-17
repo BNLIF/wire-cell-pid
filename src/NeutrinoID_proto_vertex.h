@@ -86,7 +86,6 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
 
   //  std::cout << "haha1 " << std::endl;
   
-
   if (temp_cluster == main_cluster) main_cluster_initial_pair_vertices = find_vertices(sg1);
   
   if (sg1->get_wcpt_vec().size()>1){
@@ -110,6 +109,10 @@ bool WCPPID::NeutrinoID::find_proto_vertex(WCPPID::PR3DCluster *temp_cluster, bo
 
       
     }
+
+
+
+
    
     
   //   /* for (auto it = map_vertex_segments.begin(); it!=map_vertex_segments.end(); it++){ */
