@@ -359,12 +359,19 @@ void WCPPID::NeutrinoID::determine_overall_main_vertex(){
     check_switch_main_cluster();
   }else{
     // frozen chain
-    if (max_length > map_cluster_length[main_cluster] * 0.8 )
-      check_switch_main_cluster(map_cluster_main_vertices[main_cluster], max_length_cluster);
+    auto it_frozen = map_cluster_main_vertices.find(main_cluster);
+    if (max_length > map_cluster_length[main_cluster] * 0.8 && it_frozen != map_cluster_main_vertices.end())
+      check_switch_main_cluster(it_frozen->second, max_length_cluster);
   }
   if (flag_timing) std::cout << "[determine_overall_main_vertex] timing: check_switch_main_cluster took " << std::chrono::duration_cast<DOMV_ms>(DOMV_Clock::now()-domv_t0).count() << " ms" << std::endl;
 
-  main_vertex = map_cluster_main_vertices[main_cluster];
+  auto it_mv = map_cluster_main_vertices.find(main_cluster);
+  main_vertex = (it_mv != map_cluster_main_vertices.end()) ? it_mv->second : nullptr;
+
+  if (main_vertex == 0){
+    std::cout << "[determine_overall_main_vertex] No main vertex found for main_cluster, returning." << std::endl;
+    return;
+  }
 
   // examine the track connected to it ...
   for (auto it = map_vertex_segments[main_vertex].begin(); it!= map_vertex_segments[main_vertex].end();it++){
