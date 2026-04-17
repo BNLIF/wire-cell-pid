@@ -63,7 +63,7 @@ WCPPID::NeutrinoID::NeutrinoID(WCPPID::PR3DCluster *main_cluster1, std::vector<W
 {
   bool flag_other_clusters = true;
   bool flag_main_cluster = true;
-  bool flag_tagger = false;
+  bool flag_tagger = true;
 
   // hack the main cluster
   // for (auto it = other_clusters.begin(); it != other_clusters.end(); it++){
