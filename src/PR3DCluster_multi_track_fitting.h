@@ -1,6 +1,15 @@
 
 void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& map_vertex_segments, WCPPID::Map_Proto_Segment_Vertices& map_segment_vertices, WCP::ToyCTPointCloud& ct_point_cloud, std::map<int,std::map<const WCP::GeomWire*, WCP::SMGCSelection > >& global_wc_map, double time, bool flag_dQ_dx_fit_reg, bool flag_dQ_dx_fit, bool flag_exclusion){
 
+  // WCT doc sbnd_xin/docs/pr/108 Test B (parity study, 2026-08-21): env
+  // override WCP_FIT_EXCLUSION=0 forces the exclusion fit OFF at every
+  // do_multi_tracking call site (the two already-false break_segments sites
+  // are unaffected).  Unset => behaviour unchanged.
+  {
+    static const char* wcp_excl_env = getenv("WCP_FIT_EXCLUSION");
+    if (wcp_excl_env && std::string(wcp_excl_env) == "0") flag_exclusion = false;
+  }
+
   bool flag_special = false;
 
   for (auto it = map_vertex_segments.begin(); it != map_vertex_segments.end(); it++){
