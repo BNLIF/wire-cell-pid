@@ -1,4 +1,26 @@
 
+// WCT doc sbnd_xin/docs/pr/108 stage dump (debug only): WCP_TRAJ_DUMP=<path>.
+// Same record layout as the toolkit's WCT_TRAJ_DUMP so the two can be diffed.
+static FILE* g_wcp_traj_dump = (getenv("WCP_TRAJ_DUMP") ? fopen(getenv("WCP_TRAJ_DUMP"), "a") : (FILE*)0);
+static int g_wcp_traj_call = 0;
+static int g_wcp_traj_stage = 0;
+static void wcp_traj_dump_fits(const char* tag, WCPPID::Map_Proto_Segment_Vertices& map_segment_vertices){
+  if (!g_wcp_traj_dump) return;
+  int si = 0;
+  for (auto it = map_segment_vertices.begin(); it != map_segment_vertices.end(); it++, si++){
+    WCPPID::ProtoSegment* sg = it->first;
+    std::vector<WCP::Point>& pts = sg->get_point_vec();
+    std::vector<double>& dQ = sg->get_dQ_vec();
+    std::vector<double>& dx = sg->get_dx_vec();
+    for (size_t i = 0; i != pts.size(); i++){
+      fprintf(g_wcp_traj_dump, "%d %s %d %zu %.4f %.4f %.4f %.1f %.4f\n", g_wcp_traj_call, tag, si, i,
+              pts.at(i).x/units::cm, pts.at(i).y/units::cm, pts.at(i).z/units::cm,
+              i < dQ.size() ? dQ.at(i) : 0.0, i < dx.size() ? dx.at(i)/units::cm : 0.0);
+    }
+  }
+  fflush(g_wcp_traj_dump);
+}
+
 void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& map_vertex_segments, WCPPID::Map_Proto_Segment_Vertices& map_segment_vertices, WCP::ToyCTPointCloud& ct_point_cloud, std::map<int,std::map<const WCP::GeomWire*, WCP::SMGCSelection > >& global_wc_map, double time, bool flag_dQ_dx_fit_reg, bool flag_dQ_dx_fit, bool flag_exclusion){
 
   // WCT doc sbnd_xin/docs/pr/108 Test B (parity study, 2026-08-21): env
@@ -8,6 +30,10 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
   {
     static const char* wcp_excl_env = getenv("WCP_FIT_EXCLUSION");
     if (wcp_excl_env && std::string(wcp_excl_env) == "0") flag_exclusion = false;
+  }
+  if (g_wcp_traj_dump){
+    g_wcp_traj_call++; g_wcp_traj_stage = 0;
+    fprintf(g_wcp_traj_dump, "%d call excl=%d cluster=%d\n", g_wcp_traj_call, (int)flag_exclusion, get_cluster_id());
   }
 
   bool flag_special = false;
@@ -83,6 +109,7 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
 
  
   if (flag_1st_tracking){
+    g_wcp_traj_stage = 1;
     form_map_multi_segments(map_vertex_segments, map_segment_vertices, ct_point_cloud,
 			    map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge,
 			    map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_3D_tuple,
@@ -93,6 +120,7 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
 			 map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_3D_tuple,
 			 map_2DU_3D_set, map_2DV_3D_set, map_2DW_3D_set,
 			 map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
+    wcp_traj_dump_fits("fit1", map_segment_vertices);
     
 
     // std::cout << "After first fit" << std::endl;
@@ -143,6 +171,7 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
     map_2DV_3D_set.clear();
     map_2DW_3D_set.clear();
 
+    g_wcp_traj_stage = 2;
     form_map_multi_segments(map_vertex_segments, map_segment_vertices, ct_point_cloud,
 			    map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge,
 			    map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_3D_tuple,
@@ -152,6 +181,7 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
 			 map_3D_2DU_set, map_3D_2DV_set, map_3D_2DW_set, map_3D_tuple,
 			 map_2DU_3D_set, map_2DV_3D_set, map_2DW_3D_set,
 			 map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge);
+    wcp_traj_dump_fits("fit2", map_segment_vertices);
     
     // std::cout << "After second fit" << std::endl;
     //  for (auto it = map_segment_vertices.begin(); it!=map_segment_vertices.end(); it++){
@@ -195,6 +225,7 @@ void WCPPID::PR3DCluster::do_multi_tracking(WCPPID::Map_Proto_Vertex_Segments& m
     }
     
     dQ_dx_multi_fit(map_vertex_segments, map_segment_vertices, global_wc_map, map_2D_ut_charge, map_2D_vt_charge, map_2D_wt_charge, time, end_point_limit, flag_dQ_dx_fit_reg);
+    wcp_traj_dump_fits("fit3", map_segment_vertices);
   }
 
   
@@ -757,8 +788,10 @@ void WCPPID::PR3DCluster::form_map_multi_segments(WCPPID::Map_Proto_Vertex_Segme
 
   
   int count = 0;
+  int dump_seg_index = -1;   // WCT pr/108 stage dump
   for (auto it = map_segment_vertices.begin(); it!= map_segment_vertices.end(); it++){
     WCPPID::ProtoSegment *sg = it->first;
+    dump_seg_index++;
     if (sg->get_cluster_id() != cluster_id) continue;
     WCPPID::ProtoVertex *start_v = 0, *end_v = 0;
     if ( (*it->second.begin())->get_wcpt().index == sg->get_wcpt_vec().front().index){
@@ -818,6 +851,7 @@ void WCPPID::PR3DCluster::form_map_multi_segments(WCPPID::Map_Proto_Vertex_Segme
 
 	std::set<std::pair<int,int> > temp_2dut, temp_2dvt, temp_2dwt;
 	form_point_association(pts.at(i), temp_2dut, temp_2dvt, temp_2dwt, ct_point_cloud, dis_cut, nlevel, time_cut);
+	const size_t dump_n0[3] = {temp_2dut.size(), temp_2dvt.size(), temp_2dwt.size()};  // WCT pr/108 dump
 
   // std::cout << i << " " << pts.at(i) << " " << temp_flag.at(0) << " " << temp_flag.at(1) << " " << temp_flag.at(2) << " " << temp_2dut.size() << " " << temp_2dvt.size() << " " << temp_2dwt.size() << " " << dis_cut/units::cm << " " << nlevel << " " << time_cut << std::endl;
 
@@ -828,6 +862,7 @@ void WCPPID::PR3DCluster::form_map_multi_segments(WCPPID::Map_Proto_Vertex_Segme
 
 	if (flag_exclusion)
 	  update_association(temp_2dut, temp_2dvt, temp_2dwt, sg, segments);
+	const size_t dump_n1[3] = {temp_2dut.size(), temp_2dvt.size(), temp_2dwt.size()};  // WCT pr/108: after exclusion, before examine
 	
       
 
@@ -843,6 +878,15 @@ void WCPPID::PR3DCluster::form_map_multi_segments(WCPPID::Map_Proto_Vertex_Segme
 
 
 
+	if (g_wcp_traj_dump && g_wcp_traj_stage > 0){   // WCT pr/108 stage dump
+	  const bool kept = (temp_flag.at(0) + temp_flag.at(1) + temp_flag.at(2) > 0);
+	  fprintf(g_wcp_traj_dump, "%d map%d %d %zu %.4f %.4f %.4f %zu %zu %zu %zu %zu %zu %.3f %.3f %.3f %d %.3f %zu %zu %zu\n",
+		  g_wcp_traj_call, g_wcp_traj_stage, dump_seg_index, i,
+		  pts.at(i).x/units::cm, pts.at(i).y/units::cm, pts.at(i).z/units::cm,
+		  dump_n0[0], dump_n0[1], dump_n0[2], dump_n1[0], dump_n1[1], dump_n1[2],
+		  temp_flag.at(0), temp_flag.at(1), temp_flag.at(2), (int)kept, dis_cut/units::cm,
+		  temp_2dut.size(), temp_2dvt.size(), temp_2dwt.size());
+	}
 	if (temp_flag.at(0) + temp_flag.at(1) + temp_flag.at(2) > 0){
 	  map_3D_2DU_set[count] = std::make_pair(temp_2dut,temp_flag.at(0));
 	  map_3D_2DV_set[count] = std::make_pair(temp_2dvt,temp_flag.at(1));
