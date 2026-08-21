@@ -811,6 +811,34 @@ void WCPPID::PR3DCluster::dQ_dx_multi_fit(WCPPID::Map_Proto_Vertex_Segments& map
     pos_3D = solver.solve(b);
   }
 
+  // doc sbnd_xin/docs/pr/108 sec 9 -- dQ/dx SYSTEM dump (debug only, env WCP_DQDX_DUMP=<path>; unset => no code path).  Same record layout as the toolkit's WCT_DQDX_DUMP.
+  {
+    static FILE* s_dq = (getenv("WCP_DQDX_DUMP") ? fopen(getenv("WCP_DQDX_DUMP"), "a") : (FILE*)0);
+    if (s_dq) {
+      Eigen::VectorXd bu = RUT * MU * data_u_2D, bv = RVT * MV * data_v_2D, bw = RWT * MW * data_w_2D;
+      fprintf(s_dq, "%d dqdx call n3d=%d n2d=%d/%d/%d iters=%ld err=%.6g\n", g_wcp_traj_call, (int)n_3D_pos, (int)n_2D_u, (int)n_2D_v, (int)n_2D_w, (long)solver.iterations(), (double)solver.error());
+            for (int k = 0; k < A.outerSize(); ++k)
+                for (Eigen::SparseMatrix<double>::InnerIterator it(A, k); it; ++it)
+                    fprintf(s_dq, "%d A %ld %ld %.10g\n", g_wcp_traj_call, (long)it.row(), (long)it.col(), it.value());
+            for (int i = 0; i < (int)n_3D_pos; ++i) fprintf(s_dq, "%d b %d %.10g %.10g\n", g_wcp_traj_call, i, b(i), pos_3D_init(i));
+      for (int i = 0; i < (int)n_3D_pos; ++i) {
+        int cu = 0, cv = 0, cw = 0; double su = 0, sv = 0, sw = 0;
+        for (Eigen::SparseMatrix<double>::InnerIterator it(RU, i); it; ++it) { ++cu; su += it.value(); }
+        for (Eigen::SparseMatrix<double>::InnerIterator it(RV, i); it; ++it) { ++cv; sv += it.value(); }
+        for (Eigen::SparseMatrix<double>::InnerIterator it(RW, i); it; ++it) { ++cw; sw += it.value(); }
+        double fdiag = FMatrix.coeff(i, i);
+        fprintf(s_dq, "%d dqdx %d %.4f %.4f %.4f %.4f %d %d %d %d %.4g %.4g %d %.4g %.4g %d %.4g %.4g %.4g %.1f %zu",
+                g_wcp_traj_call, i, traj_pts.at(i).x/units::cm, traj_pts.at(i).y/units::cm, traj_pts.at(i).z/units::cm, local_dx.at(i)/units::cm,
+                (int)reg_flag_u.at(i), (int)reg_flag_v.at(i), (int)reg_flag_w.at(i),
+                cu, su, bu(i), cv, sv, bv(i), cw, sw, bw(i), fdiag, pos_3D(i), connected_vec.at(i).size());
+        for (size_t j = 0; j < connected_vec.at(i).size(); ++j)
+          fprintf(s_dq, " %d:%.2f/%.2f/%.2f:%.4g", connected_vec.at(i).at(j), overlap_u.at(i).at(j), overlap_v.at(i).at(j), overlap_w.at(i).at(j), FMatrix.coeff(i, connected_vec.at(i).at(j)));
+        fprintf(s_dq, "\n");
+      }
+      fflush(s_dq);
+    }
+  }
+
   // prediction ...
   pred_data_u_2D = RU * pos_3D;
   pred_data_v_2D = RV * pos_3D;
